@@ -166,7 +166,7 @@ impl<T> Drop for LinkedList<T> {
         unsafe {
             let mut ptr = self.head;
             while !ptr.is_null() {
-                ptr::drop_in_place(&mut (*ptr).value as *mut T);
+                ptr::drop_in_place(&mut (*ptr).value);
                 ptr = (*ptr).next;
             }
 
