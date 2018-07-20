@@ -6,7 +6,7 @@ pub struct LinkedList<T> {
     tail: *mut LinkedNode<T>,
     len: usize,
     allocations: Vec<(*mut LinkedNode<T>, usize)>,
-    unused_nodes: Vec<*mut LinkedNode<T>>
+    unused_nodes: *mut LinkedNode<T>
 }
 
 struct LinkedNode<T> {
@@ -22,7 +22,7 @@ impl<T> LinkedList<T> {
             tail: ptr::null_mut(),
             len: 0,
             allocations: Vec::new(),
-            unused_nodes: Vec::new()
+            unused_nodes: ptr::null_mut()
         }
     }
     pub fn push(&mut self, value: T) {
@@ -87,7 +87,7 @@ impl<T> LinkedList<T> {
                     self.tail = (*node).prev;
                 }
 
-                self.unused_nodes.push(node);
+                self.discard_node(node);
 
                 value
             }
@@ -111,25 +111,31 @@ impl<T> LinkedList<T> {
     pub fn len(&self) -> usize {
         self.len
     }
+    fn discard_node(&mut self, node: *mut LinkedNode<T>) {
+        unsafe {
+            ptr::write(&mut (*node).next, self.unused_nodes);
+        }
+        self.unused_nodes = node;
+    }
     fn new_node(
         &mut self,
         next: *mut LinkedNode<T>,
         prev: *mut LinkedNode<T>,
         value: T
     ) -> *mut LinkedNode<T> {
-        match self.unused_nodes.pop() {
-            Some(node) => unsafe {
-                ptr::write(node, LinkedNode {
-                    next: next,
-                    prev: prev,
-                    value: value
-                });
-                node
-            },
-            None => {
+        unsafe {
+            if self.unused_nodes.is_null() {
                 self.allocate(64);
-                self.new_node(next, prev, value)
             }
+            let node = self.unused_nodes;
+            self.unused_nodes = (*node).next;
+
+            ptr::write(node, LinkedNode {
+                next: next,
+                prev: prev,
+                value: value
+            });
+            node
         }
     }
 
@@ -144,9 +150,13 @@ impl<T> LinkedList<T> {
 
         self.allocations.push((ptr, capacity));
 
-        self.unused_nodes.reserve(capacity);
         for _ in 0..capacity {
-            self.unused_nodes.push(ptr);
+
+            unsafe {
+                ptr::write(&mut (*ptr).next, self.unused_nodes);
+            }
+            self.unused_nodes = ptr;
+
             ptr = unsafe { ptr.offset(1) };
         }
     }
