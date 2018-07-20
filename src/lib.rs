@@ -133,7 +133,7 @@ impl<T> LinkedList<T> {
         }
     }
 
-    // allocates a lot of linked nodes and returns the first
+    // allocates a lot of linked nodes
     fn allocate(&mut self, amount: usize) {
         assert!(amount > 0);
         let mut vec = Vec::with_capacity(amount);
