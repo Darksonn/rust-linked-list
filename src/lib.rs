@@ -143,21 +143,20 @@ impl<T> LinkedList<T> {
     fn allocate(&mut self, amount: usize) {
         assert!(amount > 0);
         let mut vec = Vec::with_capacity(amount);
-        let mut ptr = vec.as_mut_ptr();
+        let base = vec.as_mut_ptr();
         let capacity = vec.capacity();
 
         mem::forget(vec);
 
-        self.allocations.push((ptr, capacity));
+        self.allocations.push((base, capacity));
 
-        for _ in 0..capacity {
+        for i in 0..capacity {
+            let ptr = unsafe { base.add(i) };
 
             unsafe {
                 (*ptr).next = self.unused_nodes;
             }
             self.unused_nodes = ptr;
-
-            ptr = unsafe { ptr.offset(1) };
         }
     }
 }
