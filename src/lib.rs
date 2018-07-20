@@ -178,10 +178,12 @@ impl<T> LinkedList<T> {
         if self.is_empty() { return; }
         let mut ptr = self.head;
         let mut last_retain: *mut LinkedNode<T> = ptr::null_mut();
+        let capacity = self.capacity;
 
         self.head = ptr::null_mut();
         self.tail = ptr::null_mut();
         self.len = 0;
+        self.capacity = self.capacity - self.len;
 
         let mut new_head = ptr::null_mut();
         let mut retained = 0;
@@ -213,6 +215,7 @@ impl<T> LinkedList<T> {
         self.head = new_head;
         self.tail = last_retain;
         self.len = retained;
+        self.capacity = capacity;
 
     }
     /// Go through the list, calling `f` on each element, which may mutate the element,
