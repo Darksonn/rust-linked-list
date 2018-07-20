@@ -64,7 +64,7 @@ impl<T> LinkedList<T> {
         self.head = node;
         self.len += 1;
     }
-    pub fn peek_back(&self) -> Option<&T> {
+    pub fn back(&self) -> Option<&T> {
         if self.tail.is_null() {
             None
         } else {
@@ -73,12 +73,30 @@ impl<T> LinkedList<T> {
             }
         }
     }
-    pub fn peek_front(&self) -> Option<&T> {
+    pub fn front(&self) -> Option<&T> {
         if self.head.is_null() {
             None
         } else {
             unsafe {
                 Some(&(*self.head).value)
+            }
+        }
+    }
+    pub fn back_mut(&mut self) -> Option<&mut T> {
+        if self.tail.is_null() {
+            None
+        } else {
+            unsafe {
+                Some(&mut (*self.tail).value)
+            }
+        }
+    }
+    pub fn front_mut(&mut self) -> Option<&mut T> {
+        if self.head.is_null() {
+            None
+        } else {
+            unsafe {
+                Some(&mut (*self.head).value)
             }
         }
     }
