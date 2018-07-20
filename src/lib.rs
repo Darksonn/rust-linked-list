@@ -25,7 +25,18 @@ impl<T> LinkedList<T> {
             unused_nodes: ptr::null_mut()
         }
     }
-    pub fn push(&mut self, value: T) {
+    pub fn with_capacity(cap: usize) -> LinkedList<T> {
+        let mut list = LinkedList {
+            head: ptr::null_mut(),
+            tail: ptr::null_mut(),
+            len: 0,
+            allocations: Vec::with_capacity(1),
+            unused_nodes: ptr::null_mut()
+        };
+        list.allocate(cap);
+        list
+    }
+    pub fn push_back(&mut self, value: T) {
         let tail = self.tail;
         let node = self.new_node(ptr::null_mut(), tail, value);
 
@@ -53,7 +64,7 @@ impl<T> LinkedList<T> {
         self.head = node;
         self.len += 1;
     }
-    pub fn peek(&self) -> Option<&T> {
+    pub fn peek_back(&self) -> Option<&T> {
         if self.tail.is_null() {
             None
         } else {
@@ -62,55 +73,56 @@ impl<T> LinkedList<T> {
             }
         }
     }
-    pub fn get(&self, i: usize) -> Option<&T> {
-        self.move_right(self.head, i).map(|ptr| unsafe { &(*ptr).value })
-    }
-    pub fn remove(&mut self, i: usize) -> T {
-        match self.move_right(self.head, i) {
-            None => {
-                panic!("Remove out of bounds {} with len {}", i, self.len());
-            },
-            Some(node) => unsafe {
-                let value = ptr::read(&(*node).value as *const T);
-
-                if !(*node).prev.is_null() {
-                    (*(*node).prev).next = (*node).next;
-                }
-                if !(*node).next.is_null() {
-                    (*(*node).next).prev = (*node).prev;
-                }
-
-                if node == self.head {
-                    self.head = (*node).next;
-                }
-                if node == self.tail {
-                    self.tail = (*node).prev;
-                }
-
-                self.discard_node(node);
-
-                value
+    pub fn peek_front(&self) -> Option<&T> {
+        if self.head.is_null() {
+            None
+        } else {
+            unsafe {
+                Some(&(*self.head).value)
             }
         }
     }
+    pub fn pop_back(&mut self) -> Option<T> {
+        if self.tail.is_null() {
+            None
+        } else {
+            unsafe {
+                let tail = self.tail;
+                self.tail = (*tail).prev;
 
+                if self.head == tail {
+                    self.head = ptr::null_mut();
+                }
 
-    fn move_right(&self, mut ptr: *mut LinkedNode<T>, dist: usize) -> Option<*mut LinkedNode<T>> {
-        for _ in 0..dist {
-            if ptr.is_null() {
-                return None;
+                let value = ptr::read(&(*tail).value);
+                self.discard_node(tail);
+                Some(value)
             }
-            unsafe { ptr = (*ptr).next };
         }
-        if ptr.is_null() {
-            return None;
+    }
+    pub fn pop_front(&mut self) -> Option<T> {
+        if self.head.is_null() {
+            None
+        } else {
+            unsafe {
+                let head = self.head;
+                self.head = (*head).prev;
+
+                if self.tail == head {
+                    self.tail = ptr::null_mut();
+                }
+
+                let value = ptr::read(&(*head).value);
+                self.discard_node(head);
+                Some(value)
+            }
         }
-        Some(ptr)
     }
 
     pub fn len(&self) -> usize {
         self.len
     }
+
     fn discard_node(&mut self, node: *mut LinkedNode<T>) {
         unsafe {
             (*node).next = self.unused_nodes;
@@ -141,7 +153,7 @@ impl<T> LinkedList<T> {
 
     // allocates a lot of linked nodes
     fn allocate(&mut self, amount: usize) {
-        assert!(amount > 0);
+        if amount == 0 { return; }
         let mut vec = Vec::with_capacity(amount);
         let base = vec.as_mut_ptr();
         let capacity = vec.capacity();
@@ -178,50 +190,3 @@ impl<T> Drop for LinkedList<T> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_get() {
-
-        let mut to_drop = 0;
-
-        struct DropTest {
-            value: usize,
-            to_drop: *mut usize
-        }
-        impl DropTest {
-            fn new(val: usize, to_drop: &mut usize) -> DropTest {
-                *to_drop += 1;
-                DropTest {
-                    value: val,
-                    to_drop: to_drop as *mut usize
-                }
-            }
-        }
-        impl Drop for DropTest {
-            fn drop(&mut self) {
-                unsafe {
-                    (*self.to_drop) -= 1;
-                }
-            }
-        }
-
-        let mut list = LinkedList::new();
-        for i in 64..128 {
-            list.push(DropTest::new(i, &mut to_drop));
-        }
-        list.push_front(DropTest::new(3000, &mut to_drop));
-        for i in (0..64).rev() {
-            list.push_front(DropTest::new(i, &mut to_drop));
-        }
-        assert_eq!(to_drop, 129);
-        list.remove(64);
-        assert_eq!(to_drop, 128);
-        for i in 0..128 {
-            assert_eq!(Some(i), list.get(i).map(|dt| dt.value));
-        }
-        drop(list);
-        assert_eq!(to_drop, 0);
-    }
-}
