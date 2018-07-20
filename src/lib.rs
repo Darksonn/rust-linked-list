@@ -180,10 +180,17 @@ impl<T> LinkedList<T> {
         let mut last_retain: *mut LinkedNode<T> = ptr::null_mut();
         let capacity = self.capacity;
 
+        // If f panics, then we just throw away all the used nodes.
         self.head = ptr::null_mut();
         self.tail = ptr::null_mut();
         self.len = 0;
+        // Since we are throwing away the used nodes, then the capacity is decreased by
+        // the number of used nodes.
         self.capacity = self.capacity - self.len;
+        // This means that if f panics, then we won't call drop on the remaining values,
+        // but that's safe so it's ok.
+        // We still deallocate the memory the nodes are stored in when the list is
+        // dropped, since we didn't touch the allocations array.
 
         let mut new_head = ptr::null_mut();
         let mut retained = 0;
@@ -215,6 +222,8 @@ impl<T> LinkedList<T> {
         self.head = new_head;
         self.tail = last_retain;
         self.len = retained;
+        // we didn't panic so put capacity back at the actual value
+        // we didn't allocate or deallocate in this method, so capacity is the same
         self.capacity = capacity;
 
     }
