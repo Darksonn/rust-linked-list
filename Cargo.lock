@@ -1,4 +1,4 @@
 [[package]]
-name = "skip-list"
+name = "linked-list"
 version = "0.1.0"
 

@@ -5,30 +5,24 @@ pub struct LinkedList<T> {
     head: *mut LinkedNode<T>,
     tail: *mut LinkedNode<T>,
     len: usize,
-    dealloc_offset: isize,
+    allocations: Vec<(*mut LinkedNode<T>, usize)>,
     unused_nodes: Vec<*mut LinkedNode<T>>
 }
 
-enum DeallocInfo<T> {
-    NoDealloc(),
-    Dealloc(*mut LinkedNode<T>, usize)
-}
 struct LinkedNode<T> {
     next: *mut LinkedNode<T>,
     prev: *mut LinkedNode<T>,
-    dealloc: DeallocInfo<T>,
     value: T
 }
 
 impl<T> LinkedList<T> {
     pub fn new() -> LinkedList<T> {
-        if mem::size_of::<T>() == 0 { panic!("LinkedList with zero sized type"); }
         LinkedList {
             head: ptr::null_mut(),
             tail: ptr::null_mut(),
-            dealloc_offset: 0,
             len: 0,
-            unused_nodes: Vec::with_capacity(64)
+            allocations: Vec::new(),
+            unused_nodes: Vec::new()
         }
     }
     pub fn push(&mut self, value: T) {
@@ -117,99 +111,59 @@ impl<T> LinkedList<T> {
     pub fn len(&self) -> usize {
         self.len
     }
-    fn new_node(&mut self, next: *mut LinkedNode<T>, prev: *mut LinkedNode<T>, value: T) -> *mut LinkedNode<T> {
+    fn new_node(
+        &mut self,
+        next: *mut LinkedNode<T>,
+        prev: *mut LinkedNode<T>,
+        value: T
+    ) -> *mut LinkedNode<T> {
         match self.unused_nodes.pop() {
             Some(node) => unsafe {
-                let node_dealloc = ptr::read(self.dealloc_ptr(node));
                 ptr::write(node, LinkedNode {
                     next: next,
                     prev: prev,
-                    dealloc: node_dealloc,
                     value: value
                 });
                 node
             },
             None => {
-                self.allocate(64, next, prev, value)
+                self.allocate(64);
+                self.new_node(next, prev, value)
             }
         }
     }
 
-    fn dealloc_ptr(&self, ptr: *mut LinkedNode<T>) -> *mut DeallocInfo<T> {
-        debug_assert!(self.dealloc_offset > 0);
-        ((ptr as isize) + self.dealloc_offset) as *mut DeallocInfo<T>
-    }
-
     // allocates a lot of linked nodes and returns the first
-    fn allocate(&mut self, amount: usize, next: *mut LinkedNode<T>, prev: *mut LinkedNode<T>, value: T) -> *mut LinkedNode<T> {
+    fn allocate(&mut self, amount: usize) {
         assert!(amount > 0);
         let mut vec = Vec::with_capacity(amount);
-        let ptr = vec.as_mut_ptr();
+        let mut ptr = vec.as_mut_ptr();
         let capacity = vec.capacity();
 
-        let first = LinkedNode {
-            next: next,
-            prev: prev,
-            dealloc: DeallocInfo::Dealloc(ptr, capacity),
-            value: value
-        };
         mem::forget(vec);
-        unsafe { ptr::write(ptr, first); }
 
-        let dealloc_offset = unsafe { (&mut (*ptr).dealloc as *mut DeallocInfo<T> as isize) - (ptr as isize) };
-        self.dealloc_offset = dealloc_offset;
+        self.allocations.push((ptr, capacity));
 
-        let mut nptr = unsafe { ptr.offset(1) };
-        self.unused_nodes.reserve(capacity - 1);
-        for _ in 1..capacity {
-            let dptr = self.dealloc_ptr(nptr);
-            unsafe { ptr::write(dptr, DeallocInfo::NoDealloc()); }
-            self.unused_nodes.push(nptr);
-            nptr = unsafe { nptr.offset(1) };
+        self.unused_nodes.reserve(capacity);
+        for _ in 0..capacity {
+            self.unused_nodes.push(ptr);
+            ptr = unsafe { ptr.offset(1) };
         }
-
-        ptr
     }
 }
 
 impl<T> Drop for LinkedList<T> {
     fn drop(&mut self) {
-        use DeallocInfo::*;
         unsafe {
-            for i in (0..self.unused_nodes.len()).rev() {
-                let node = self.unused_nodes[i];
-                let node_dealloc = ptr::read(self.dealloc_ptr(node));
-                match node_dealloc {
-                    NoDealloc() => {
-                        self.unused_nodes.swap_remove(i);
-                    },
-                    _ => {}
-                }
-            }
-
             let mut ptr = self.head;
             while !ptr.is_null() {
-                match &(*ptr).dealloc {
-                    Dealloc(_, _) => {
-                        self.unused_nodes.push(ptr);
-                    },
-                    _ => {}
-                }
                 ptr::drop_in_place(&mut (*ptr).value as *mut T);
                 ptr = (*ptr).next;
             }
 
-            for &ptr in &self.unused_nodes {
-                let node_dealloc = ptr::read(self.dealloc_ptr(ptr));
-                match node_dealloc {
-                    NoDealloc() => {
-                        panic!("We removed all NoDealloc, but we still have one");
-                    },
-                    Dealloc(vecptr, capacity) => {
-                        let vec = Vec::from_raw_parts(vecptr, 0, capacity);
-                        drop(vec);
-                    }
-                }
+            for &(vecptr, capacity) in &self.allocations {
+                let vec = Vec::from_raw_parts(vecptr, 0, capacity);
+                drop(vec);
             }
         }
     }
