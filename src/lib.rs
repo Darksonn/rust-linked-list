@@ -1,5 +1,19 @@
 use std::ptr;
 use std::mem;
+use std::fmt;
+use std::iter::{
+    FusedIterator,
+    ExactSizeIterator,
+    DoubleEndedIterator,
+    FromIterator,
+    IntoIterator,
+    Extend
+};
+use std::hash::{Hash, Hasher};
+use std::marker::PhantomData;
+
+#[cfg(test)]
+extern crate rand;
 
 pub struct LinkedList<T> {
     head: *mut LinkedNode<T>,
@@ -154,6 +168,89 @@ impl<T> LinkedList<T> {
         }
     }
 
+    /// Go through the list, calling `f` on each element, replacing the element with the
+    /// return value of `f`, or removing it if `f` returns `None`.
+    pub fn retain_val(&mut self, mut f: impl FnMut(T) -> Option<T>) {
+        if self.is_empty() { return; }
+        let mut ptr = self.head;
+        let mut last_retain: *mut LinkedNode<T> = ptr::null_mut();
+
+        self.head = ptr::null_mut();
+        self.tail = ptr::null_mut();
+        self.len = 0;
+
+        let mut new_head = ptr::null_mut();
+        let mut retained = 0;
+
+        unsafe {
+            while !ptr.is_null() {
+                let value_ptr = &mut (*ptr).value as *mut T;
+                let next_ptr = (*ptr).next;
+                match f(ptr::read(value_ptr)) {
+                    Some(new_value) => {
+                        ptr::write(value_ptr, new_value);
+                        if last_retain.is_null() {
+                            new_head = ptr;
+                        } else {
+                            (*last_retain).next = ptr;
+                        }
+                        (*ptr).prev = last_retain;
+                        last_retain = ptr;
+                        retained += 1;
+                    },
+                    None => {
+                        self.discard_node(ptr);
+                    }
+                }
+                ptr = next_ptr;
+            }
+        }
+
+        self.head = new_head;
+        self.tail = last_retain;
+        self.len = retained;
+
+    }
+    /// Go through the list, calling `f` on each element, which may mutate the element,
+    /// then removes it if `f` returns `false`.
+    pub fn retain_mut(&mut self, mut f: impl FnMut(&mut T) -> bool) {
+        self.retain_val(|mut val| {
+            if f(&mut val) {
+                Some(val)
+            } else {
+                None
+            }
+        });
+    }
+    /// Go through the list, calling `f` on each element, and removes it if `f` returns
+    /// `false`.
+    pub fn retain(&mut self, mut f: impl FnMut(&T) -> bool) {
+        self.retain_val(|val| {
+            if f(&val) {
+                Some(val)
+            } else {
+                None
+            }
+        });
+    }
+
+    pub fn iter<'a>(&'a self) -> Iter<'a, T> {
+        Iter {
+            head: self.head,
+            tail: self.tail,
+            len: self.len,
+            marker: PhantomData
+        }
+    }
+    pub fn iter_mut<'a>(&'a mut self) -> IterMut<'a, T> {
+        IterMut {
+            head: self.head,
+            tail: self.tail,
+            len: self.len,
+            marker: PhantomData
+        }
+    }
+
     /// Clears the linked list, but does not deallocate any memory.
     pub fn clear(&mut self) {
         let mut ptr = self.head;
@@ -162,8 +259,7 @@ impl<T> LinkedList<T> {
         self.len = 0;
         while !ptr.is_null() {
             unsafe {
-                ptr::drop_in_place(&mut (*ptr).value);
-                self.discard_node(ptr);
+                self.drop_node(ptr);
                 ptr = (*ptr).next;
             }
         }
@@ -233,6 +329,13 @@ impl<T> LinkedList<T> {
         }
         self.unused_nodes = node;
     }
+    fn drop_node(&mut self, node: *mut LinkedNode<T>) {
+        unsafe {
+            ptr::drop_in_place(&mut (*node).value);
+            (*node).next = self.unused_nodes;
+        }
+        self.unused_nodes = node;
+    }
     fn new_node(
         &mut self,
         next: *mut LinkedNode<T>,
@@ -267,7 +370,9 @@ impl<T> LinkedList<T> {
 
         self.allocations.push((base, capacity));
 
-        for i in 0..capacity {
+        // add them to the unused_nodes list in reverse order, so they end up in the
+        // correct order if lots of elements are added with push_back
+        for i in (0..capacity).rev() {
             let ptr = unsafe { base.add(i) };
 
             unsafe {
@@ -294,4 +399,334 @@ impl<T> Drop for LinkedList<T> {
         }
     }
 }
+impl<T> Default for LinkedList<T> {
+    fn default() -> LinkedList<T> {
+        LinkedList::new()
+    }
+}
+impl<T: Clone> Clone for LinkedList<T> {
+    fn clone(&self) -> LinkedList<T> {
+        let mut list = LinkedList::with_capacity(self.len());
+        for item in self.iter() {
+            list.push_back(item.clone());
+        }
+        list
+    }
+    fn clone_from(&mut self, source: &Self) {
+        self.clear();
+        self.reserve_exact(source.len());
+        for item in source.iter() {
+            self.push_back(item.clone());
+        }
+    }
+}
+impl<T> FromIterator<T> for LinkedList<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let iter = iter.into_iter();
+        let mut list = LinkedList::with_capacity(iter.size_hint().0);
+        for item in iter {
+            list.push_back(item);
+        }
+        list
+    }
+}
+impl<T: Eq> Eq for LinkedList<T> {}
+impl<T: PartialEq<U>, U> PartialEq<LinkedList<U>> for LinkedList<T> {
+    fn eq(&self, other: &LinkedList<U>) -> bool {
+        if self.len() != other.len() { return false; }
+        for (a, b) in self.iter().zip(other.iter()) {
+            if a != b {
+                return false;
+            }
+        }
+        true
+    }
+}
+impl<T: PartialEq<U>, U> PartialEq<Vec<U>> for LinkedList<T> {
+    fn eq(&self, other: &Vec<U>) -> bool {
+        if self.len() != other.len() { return false; }
+        for (a, b) in self.iter().zip(other.iter()) {
+            if a != b {
+                return false;
+            }
+        }
+        true
+    }
+}
+impl<T> Extend<T> for LinkedList<T> {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        let iter = iter.into_iter();
+        self.reserve(iter.size_hint().0);
+        for item in iter {
+            self.push_back(item);
+        }
+    }
+}
+impl<T> IntoIterator for LinkedList<T> {
+    type Item = T;
+    type IntoIter = IntoIter<T>;
+    fn into_iter(mut self) -> IntoIter<T> {
+        let iter = IntoIter {
+            head: self.head,
+            tail: self.tail,
+            len: self.len,
+            allocations: unsafe { ptr::read(&mut self.allocations) }
+        };
+        mem::forget(self);
+        iter
+    }
+}
+impl<T: Hash> Hash for LinkedList<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for item in self.iter() {
+            item.hash(state);
+        }
+    }
+}
+impl<T: fmt::Debug> fmt::Debug for LinkedList<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        let mut tuple = f.debug_list();
+        for item in self.iter() {
+            tuple.entry(item);
+        }
+        tuple.finish()
+    }
+}
 
+#[derive(Clone,Copy,Eq,PartialEq)]
+pub struct Iter<'a, T: 'a> {
+    head: *mut LinkedNode<T>,
+    tail: *mut LinkedNode<T>,
+    len: usize,
+    marker: PhantomData<&'a T>
+}
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+    fn next(&mut self) -> Option<&'a T> {
+        if self.len > 0 {
+            debug_assert!(!self.head.is_null());
+            unsafe {
+                let value = Some(&(*self.head).value);
+                self.head = (*self.head).next;
+                self.len -= 1;
+                value
+            }
+        } else {
+            None
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
+    fn count(self) -> usize {
+        self.len
+    }
+    fn last(self) -> Option<&'a T> {
+        if self.len > 0 {
+            debug_assert!(!self.tail.is_null());
+            unsafe { Some(&(*self.tail).value) }
+        } else {
+            None
+        }
+    }
+}
+impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
+    fn next_back(&mut self) -> Option<&'a T> {
+        if self.len > 0 {
+            debug_assert!(!self.tail.is_null());
+            unsafe {
+                let value = Some(&(*self.tail).value);
+                self.tail = (*self.tail).prev;
+                self.len -= 1;
+                value
+            }
+        } else {
+            None
+        }
+    }
+}
+impl<'a, T> FusedIterator for Iter<'a, T> {}
+impl<'a, T> ExactSizeIterator for Iter<'a, T> {
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+
+
+pub struct IterMut<'a, T: 'a> {
+    head: *mut LinkedNode<T>,
+    tail: *mut LinkedNode<T>,
+    len: usize,
+    marker: PhantomData<&'a mut T>
+}
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+    fn next(&mut self) -> Option<&'a mut T> {
+        if self.len > 0 {
+            debug_assert!(!self.head.is_null());
+            unsafe {
+                let value = Some(&mut (*self.head).value);
+                self.head = (*self.head).next;
+                self.len -= 1;
+                value
+            }
+        } else {
+            None
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
+    fn count(self) -> usize {
+        self.len
+    }
+    fn last(self) -> Option<&'a mut T> {
+        if self.len > 0 {
+            debug_assert!(!self.tail.is_null());
+            unsafe { Some(&mut (*self.tail).value) }
+        } else {
+            None
+        }
+    }
+}
+impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
+    fn next_back(&mut self) -> Option<&'a mut T> {
+        if self.len > 0 {
+            debug_assert!(!self.tail.is_null());
+            unsafe {
+                let value = Some(&mut(*self.tail).value);
+                self.tail = (*self.tail).prev;
+                self.len -= 1;
+                value
+            }
+        } else {
+            None
+        }
+    }
+}
+impl<'a, T> FusedIterator for IterMut<'a, T> {}
+impl<'a, T> ExactSizeIterator for IterMut<'a, T> {
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+
+pub struct IntoIter<T> {
+    head: *mut LinkedNode<T>,
+    tail: *mut LinkedNode<T>,
+    len: usize,
+    allocations: Vec<(*mut LinkedNode<T>, usize)>
+}
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<T> {
+        if self.len > 0 {
+            debug_assert!(!self.head.is_null());
+            unsafe {
+                let value = ptr::read(&mut (*self.head).value);
+                self.head = (*self.head).next;
+                self.len -= 1;
+                Some(value)
+            }
+        } else {
+            None
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
+    fn count(self) -> usize {
+        self.len
+    }
+    fn last(self) -> Option<T> {
+        if self.len > 0 {
+            debug_assert!(!self.tail.is_null());
+            unsafe { Some(ptr::read(&mut (*self.tail).value)) }
+        } else {
+            None
+        }
+    }
+}
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    fn next_back(&mut self) -> Option<T> {
+        if self.len > 0 {
+            debug_assert!(!self.tail.is_null());
+            unsafe {
+                let value = ptr::read(&mut (*self.tail).value);
+                self.tail = (*self.tail).prev;
+                self.len -= 1;
+                Some(value)
+            }
+        } else {
+            None
+        }
+    }
+}
+impl<T> FusedIterator for IntoIter<T> {}
+impl<T> ExactSizeIterator for IntoIter<T> {
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+impl<T> Drop for IntoIter<T> {
+    fn drop(&mut self) {
+        unsafe {
+            // drop remaining elements
+            while let Some(_) = self.next() {}
+
+            // deallocate memory
+            for &(vecptr, capacity) in &self.allocations {
+                let vec = Vec::from_raw_parts(vecptr, 0, capacity);
+                drop(vec);
+            }
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::prelude::*;
+    #[test]
+    fn retain() {
+        let mut list: LinkedList<usize> = LinkedList::new();
+        for i in 0..16 {
+            list.push_back(i);
+        }
+
+        let mut rng = thread_rng();
+
+        let mut mask = [false; 16];
+        for val in mask.iter_mut() {
+            *val = rng.gen();
+        }
+
+        list.retain_val(|i| {
+            if mask[i] {
+                Some(i + 1)
+            } else {
+                None
+            }
+        });
+
+        let nums: Vec<usize> = (0..16).filter(|&i| mask[i]).map(|i| i+1).collect();
+
+        println!("{:?}", mask);
+        for (a, b) in list.into_iter().zip(nums.into_iter()) {
+            assert_eq!(a, b);
+        }
+    }
+
+    #[test]
+    fn iter_collect_compare() {
+        let mut list = LinkedList::new();
+        for i in 0..64usize {
+            list.push_back(i);
+        }
+        let list2: LinkedList<u32> = list.iter().map(|&i| i as u32).collect();
+        let vec: Vec<u32> = list.into_iter().map(|i| i as u32).collect();
+
+        assert_eq!(list2, vec);
+    }
+}
