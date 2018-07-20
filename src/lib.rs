@@ -688,3 +688,72 @@ mod tests {
     }
 }
 
+// serde impls
+#[cfg(feature = "serde")]
+extern crate serde;
+#[cfg(all(feature = "serde", test))]
+extern crate serde_json;
+#[cfg(feature = "serde")]
+use serde::{Serialize, Serializer, Deserialize, Deserializer, de::Visitor, de::SeqAccess};
+
+#[cfg(feature = "serde")]
+impl<T: Serialize> Serialize for LinkedList<T> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeSeq;
+        let mut seq = serializer.serialize_seq(Some(self.len()))?;
+        for e in self.iter() {
+            seq.serialize_element(e)?;
+        }
+        seq.end()
+    }
+}
+#[cfg(feature = "serde")]
+struct LinkedListVisitor<T> {
+    marker: PhantomData<T>
+}
+#[cfg(feature = "serde")]
+impl<'de, T: Deserialize<'de>> Visitor<'de> for LinkedListVisitor<T> {
+    type Value = LinkedList<T>;
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "a sequence")
+    }
+    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+        let mut list = match seq.size_hint() {
+            Some(hint) => LinkedList::with_capacity(hint),
+            None => LinkedList::new()
+        };
+        while let Some(next) = seq.next_element()? {
+            list.push_back(next);
+        }
+        Ok(list)
+    }
+}
+#[cfg(feature = "serde")]
+impl<'de, T: Deserialize<'de>> Deserialize<'de> for LinkedList<T> {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_seq(LinkedListVisitor { marker: PhantomData })
+    }
+}
+
+
+#[cfg(all(feature = "serde", test))]
+mod serde_test {
+    use super::*;
+    use serde_json::*;
+    use rand::prelude::*;
+    #[test]
+    fn serialize() {
+        let mut list: LinkedList<u32> = LinkedList::new();
+        list.set_chunk_size(328);
+        for _ in 0..1028 {
+            list.push_back(random());
+        }
+
+        let json = serde_json::to_string(&list).unwrap();
+        println!("{}", &json);
+        let list2: LinkedList<u32> = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(list, list2);
+    }
+}
+
