@@ -25,6 +25,10 @@ pub struct LinkedList<T> {
     unused_nodes: *mut LinkedNode<T>
 }
 
+// LinkedLists own their data, so the borrow checker should prevent data races.
+unsafe impl<T: Send> Send for LinkedList<T> {}
+unsafe impl<T: Sync> Sync for LinkedList<T> {}
+
 pub(crate) struct LinkedNode<T> {
     next: *mut LinkedNode<T>,
     prev: *mut LinkedNode<T>,
