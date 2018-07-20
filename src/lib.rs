@@ -8,6 +8,7 @@ use std::iter::{
 };
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
+use std::cmp::Ordering;
 
 pub mod iter;
 use iter::{Iter, IterMut, IntoIter};
@@ -599,12 +600,43 @@ impl<T: PartialEq<U>, U> PartialEq<Vec<U>> for LinkedList<T> {
         true
     }
 }
+impl<T: Ord> Ord for LinkedList<T> {
+    fn cmp(&self, other: &LinkedList<T>) -> Ordering {
+        for (a, b) in self.iter().zip(other.iter()) {
+            match a.cmp(b) {
+                Ordering::Equal => { },
+                ordering => { return ordering; }
+            }
+        }
+        Ordering::Equal
+    }
+}
+impl<T: PartialOrd<U>, U> PartialOrd<LinkedList<U>> for LinkedList<T> {
+    fn partial_cmp(&self, other: &LinkedList<U>) -> Option<Ordering> {
+        for (a, b) in self.iter().zip(other.iter()) {
+            match a.partial_cmp(b) {
+                Some(Ordering::Equal) => { },
+                ordering => { return ordering; }
+            }
+        }
+        Some(Ordering::Equal)
+    }
+}
 impl<T> Extend<T> for LinkedList<T> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let iter = iter.into_iter();
         self.reserve(iter.size_hint().0);
         for item in iter {
             self.push_back(item);
+        }
+    }
+}
+impl<'a, T: 'a + Copy> Extend<&'a T> for LinkedList<T> {
+    fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
+        let iter = iter.into_iter();
+        self.reserve(iter.size_hint().0);
+        for item in iter {
+            self.push_back(*item);
         }
     }
 }
@@ -620,6 +652,20 @@ impl<T> IntoIterator for LinkedList<T> {
         };
         mem::forget(self);
         iter
+    }
+}
+impl<'a, T> IntoIterator for &'a LinkedList<T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+    fn into_iter(self) -> Iter<'a, T> {
+        self.iter()
+    }
+}
+impl<'a, T> IntoIterator for &'a mut LinkedList<T> {
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+    fn into_iter(self) -> IterMut<'a, T> {
+        self.iter_mut()
     }
 }
 impl<T: Hash> Hash for LinkedList<T> {
@@ -739,7 +785,6 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for LinkedList<T> {
 #[cfg(all(feature = "serde", test))]
 mod serde_test {
     use super::*;
-    use serde_json::*;
     use rand::prelude::*;
     #[test]
     fn serialize() {
