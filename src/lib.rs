@@ -113,7 +113,7 @@ impl<T> LinkedList<T> {
     }
     fn discard_node(&mut self, node: *mut LinkedNode<T>) {
         unsafe {
-            ptr::write(&mut (*node).next, self.unused_nodes);
+            (*node).next = self.unused_nodes;
         }
         self.unused_nodes = node;
     }
@@ -153,7 +153,7 @@ impl<T> LinkedList<T> {
         for _ in 0..capacity {
 
             unsafe {
-                ptr::write(&mut (*ptr).next, self.unused_nodes);
+                (*ptr).next = self.unused_nodes;
             }
             self.unused_nodes = ptr;
 
