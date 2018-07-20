@@ -174,7 +174,7 @@ impl<T> LinkedList<T> {
 
     /// Go through the list, calling `f` on each element, replacing the element with the
     /// return value of `f`, or removing it if `f` returns `None`.
-    pub fn retain_val(&mut self, mut f: impl FnMut(T) -> Option<T>) {
+    pub fn retain_map(&mut self, mut f: impl FnMut(T) -> Option<T>) {
         if self.is_empty() { return; }
         let mut ptr = self.head;
         let mut last_retain: *mut LinkedNode<T> = ptr::null_mut();
@@ -218,7 +218,7 @@ impl<T> LinkedList<T> {
     /// Go through the list, calling `f` on each element, which may mutate the element,
     /// then removes it if `f` returns `false`.
     pub fn retain_mut(&mut self, mut f: impl FnMut(&mut T) -> bool) {
-        self.retain_val(|mut val| {
+        self.retain_map(|mut val| {
             if f(&mut val) {
                 Some(val)
             } else {
@@ -229,7 +229,7 @@ impl<T> LinkedList<T> {
     /// Go through the list, calling `f` on each element, and removes it if `f` returns
     /// `false`.
     pub fn retain(&mut self, mut f: impl FnMut(&T) -> bool) {
-        self.retain_val(|val| {
+        self.retain_map(|val| {
             if f(&val) {
                 Some(val)
             } else {
@@ -517,7 +517,7 @@ mod tests {
             *val = rng.gen();
         }
 
-        list.retain_val(|i| {
+        list.retain_map(|i| {
             if mask[i] {
                 Some(i + 1)
             } else {
