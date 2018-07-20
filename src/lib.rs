@@ -29,7 +29,7 @@ pub struct LinkedList<T> {
 unsafe impl<T: Send> Send for LinkedList<T> {}
 unsafe impl<T: Sync> Sync for LinkedList<T> {}
 
-pub(crate) struct LinkedNode<T> {
+struct LinkedNode<T> {
     next: *mut LinkedNode<T>,
     prev: *mut LinkedNode<T>,
     value: T
