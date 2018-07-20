@@ -64,6 +64,8 @@ impl<T> LinkedList<T> {
     }
 
     /// Add the element to the back of the linked list.
+    ///
+    /// This method is O(1).
     pub fn push_back(&mut self, value: T) {
         let tail = self.tail;
         let node = self.new_node(ptr::null_mut(), tail, value);
@@ -79,6 +81,8 @@ impl<T> LinkedList<T> {
         self.len += 1;
     }
     /// Add the element to the front of the linked list.
+    ///
+    /// This method is O(1).
     pub fn push_front(&mut self, value: T) {
         let head = self.head;
         let node = self.new_node(head, ptr::null_mut(), value);
@@ -94,6 +98,8 @@ impl<T> LinkedList<T> {
         self.len += 1;
     }
     /// Returns the last element in the list, or none if it is empty.
+    ///
+    /// This method is O(1).
     pub fn back(&self) -> Option<&T> {
         if self.tail.is_null() {
             None
@@ -104,6 +110,8 @@ impl<T> LinkedList<T> {
         }
     }
     /// Returns the first element in the list, or none if it is empty.
+    ///
+    /// This method is O(1).
     pub fn front(&self) -> Option<&T> {
         if self.head.is_null() {
             None
@@ -114,6 +122,8 @@ impl<T> LinkedList<T> {
         }
     }
     /// Returns the last element in the list, or none if it is empty.
+    ///
+    /// This method is O(1).
     pub fn back_mut(&mut self) -> Option<&mut T> {
         if self.tail.is_null() {
             None
@@ -124,6 +134,8 @@ impl<T> LinkedList<T> {
         }
     }
     /// Returns the first element in the list, or none if it is empty.
+    ///
+    /// This method is O(1).
     pub fn front_mut(&mut self) -> Option<&mut T> {
         if self.head.is_null() {
             None
@@ -134,6 +146,8 @@ impl<T> LinkedList<T> {
         }
     }
     /// Remove the last element in the list and return it, or none if it's empty.
+    ///
+    /// This method is O(1).
     pub fn pop_back(&mut self) -> Option<T> {
         if self.tail.is_null() {
             None
@@ -153,6 +167,8 @@ impl<T> LinkedList<T> {
         }
     }
     /// Remove the first element in the list and return it, or none if it's empty.
+    ///
+    /// This method is O(1).
     pub fn pop_front(&mut self) -> Option<T> {
         if self.head.is_null() {
             None
@@ -174,6 +190,12 @@ impl<T> LinkedList<T> {
 
     /// Go through the list, calling `f` on each element, replacing the element with the
     /// return value of `f`, or removing it if `f` returns `None`.
+    ///
+    /// If `f` panics, the linked list will be left empty, and it may not call `drop` on
+    /// some elements, although memory will still be properly deallocated when the linked
+    /// list is dropped.
+    ///
+    /// This method is O(n).
     pub fn retain_map(&mut self, mut f: impl FnMut(T) -> Option<T>) {
         if self.is_empty() { return; }
         let mut ptr = self.head;
@@ -229,6 +251,8 @@ impl<T> LinkedList<T> {
     }
     /// Go through the list, calling `f` on each element, which may mutate the element,
     /// then removes it if `f` returns `false`.
+    ///
+    /// This method is O(n).
     pub fn retain_mut(&mut self, mut f: impl FnMut(&mut T) -> bool) {
         self.retain_map(|mut val| {
             if f(&mut val) {
@@ -240,6 +264,8 @@ impl<T> LinkedList<T> {
     }
     /// Go through the list, calling `f` on each element, and removes it if `f` returns
     /// `false`.
+    ///
+    /// This method is O(n).
     pub fn retain(&mut self, mut f: impl FnMut(&T) -> bool) {
         self.retain_map(|val| {
             if f(&val) {
@@ -250,6 +276,88 @@ impl<T> LinkedList<T> {
         });
     }
 
+    /// Append all nodes from other to this list.
+    ///
+    /// This method moves the nodes from the `other` linked list directly into this linked
+    /// list, meaning that the running time doesn't depend on the size of the lists.
+    ///
+    /// Note that this method also moves all excess capacity from one list to the other,
+    /// which is `O(min(self.len - self.capacity, other.len - other.capacity))`.
+    ///
+    /// This method guarantees that the capacity in `self` is increased by
+    /// `other.capacity()`, and that `other` will have a capacity of zero when this method
+    /// returns.
+    ///
+    /// Besides moving capacity, this method also moves the list of allocations, which
+    /// takes `O(min(self.allocations.len(), other.allocations.len()))` time. This has the
+    /// unfortunate effect that if the size of allocations isn't controlled with
+    /// `reserve`, `with_capacity`, etc., then this is `O(min(self.len, other.len))` as
+    /// every allocation will have a size of 64.
+    ///
+    /// This method is `O(min(excess_capacity) + min(number_of_allocations))`.
+    pub fn append(&mut self, other: &mut LinkedList<T>) {
+        if self.is_empty() {
+            // just directly move the chain to self
+            self.head = other.head;
+            self.tail = other.tail;
+            self.len = other.len;
+        } else if other.is_empty() {
+            // do nothing
+        } else {
+            // both have elements so we append the chain
+            unsafe {
+                (*self.tail).next = other.head;
+                (*other.head).prev = self.tail;
+                self.tail = other.tail;
+            }
+
+        }
+
+        // move allocations
+        if self.allocations.len() < other.allocations.len() {
+            mem::swap(&mut self.allocations, &mut other.allocations);
+        }
+        // self.allocations is now the longest array
+        self.allocations.extend(other.allocations.drain(..));
+
+        // move unused capacity to self, since self now owns the memory
+        self.capacity = self.capacity + other.capacity;
+        self.combine_unused_nodes(other);
+
+        // other is now empty
+        other.head = ptr::null_mut();
+        other.tail = ptr::null_mut();
+        other.len = 0;
+        other.capacity = 0;
+        // allocations is emptied by drain
+        debug_assert!(other.allocations.is_empty());
+        // unused_nodes is moved by combined_unused_nodes
+        debug_assert!(other.unused_nodes.is_null());
+    }
+    fn combine_unused_nodes(&mut self, other: &mut LinkedList<T>) {
+        if self.capacity - self.len < other.capacity - other.len {
+            mem::swap(&mut self.unused_nodes, &mut other.unused_nodes);
+        }
+        // self.unused_nodes is now a longer linked list than the one in other
+        // let's find the last node in other.unused_nodes
+        let mut ptr = other.unused_nodes;
+        if ptr.is_null() {
+            // other is null, so we moved all unused_nodes with the swap
+            return;
+        }
+        unsafe {
+            // iterate to the last node
+            while !(*ptr).next.is_null() {
+                ptr = (*ptr).next;
+            }
+            // we now put the unused_nodes in other in front of the ones in self
+            (*ptr).next = self.unused_nodes;
+            self.unused_nodes = other.unused_nodes;
+            other.unused_nodes = ptr::null_mut();
+        }
+    }
+
+    /// Borrows the list and returns an iterator through the elements in the list.
     pub fn iter<'a>(&'a self) -> Iter<'a, T> {
         Iter {
             head: self.head,
@@ -258,6 +366,7 @@ impl<T> LinkedList<T> {
             marker: PhantomData
         }
     }
+    /// Mutably borrows the list and returns an iterator through the elements in the list.
     pub fn iter_mut<'a>(&'a mut self) -> IterMut<'a, T> {
         IterMut {
             head: self.head,
@@ -268,56 +377,75 @@ impl<T> LinkedList<T> {
     }
 
     /// Clears the linked list, but does not deallocate any memory.
+    ///
+    /// This is `O(self.len)` unless `T` has no destructor, in which case it's `O(1)`.
     pub fn clear(&mut self) {
-        let mut ptr = self.head;
+
+        if mem::needs_drop::<T>() {
+            // we need to drop this type, so let's go through every element and drop it
+            let mut ptr = self.tail;
+            while !ptr.is_null() {
+                unsafe {
+                    // this call drops the node and adds it to unused_nodes
+                    self.drop_node(ptr);
+                    // we go from the tail to the head, since then adding nodes with
+                    // push_back will use nodes in the same order as they were before
+                    // clear was called
+                    ptr = (*ptr).prev;
+                }
+            }
+        } else {
+            unsafe {
+                // just merge the linked list into the linked list in unused_nodes
+                (*self.tail).next = self.unused_nodes;
+                // unused_nodes is singly linked, so we don't need the other link
+                self.unused_nodes = self.head;
+            }
+        }
+
         self.head = ptr::null_mut();
         self.tail = ptr::null_mut();
         self.len = 0;
-        while !ptr.is_null() {
-            unsafe {
-                self.drop_node(ptr);
-                ptr = (*ptr).next;
-            }
-        }
-    }
-    /// Clears the linked list, and deallocates all memory.
-    pub fn clear_and_deallocate(&mut self) {
-        let chunk_size = self.chunk_size;
-        *self = LinkedList {
-            head: ptr::null_mut(),
-            tail: ptr::null_mut(),
-            len: 0,
-            capacity: 0,
-            chunk_size: chunk_size,
-            allocations: Vec::new(),
-            unused_nodes: ptr::null_mut()
-        };
     }
 
     /// Returns the capacity of the linked list.
+    ///
+    /// This is O(1).
     pub fn capacity(&self) -> usize {
         self.capacity
     }
     /// Returns the number of items in the linked list.
+    ///
+    /// This is O(1).
     pub fn len(&self) -> usize {
         self.len
     }
     /// Returns the number of items allocated when more memory is needed.
+    ///
+    /// This is O(1).
     pub fn chunk_size(&self) -> usize {
         self.chunk_size
     }
     /// Returns true if the list is empty.
+    ///
+    /// This is O(1).
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
     /// Set the number of items allocated when more memory is needed.
+    ///
+    /// This does not affect previous allocations.
+    ///
+    /// This is O(1).
     pub fn set_chunk_size(&mut self, size: usize) {
         assert!(size > 0);
         self.chunk_size = size;
     }
     /// Allocate enough memory for the linked list to contain at least `amount` memory, but
     /// may allocate up to `chunk_size` if `amount` is less than `chunk_size`.
+    ///
+    /// This is O(allocation_size).
     pub fn reserve(&mut self, amount: usize) {
         let free_capacity = self.capacity() - self.len();
         if free_capacity >= amount { return; }
@@ -332,6 +460,8 @@ impl<T> LinkedList<T> {
     }
     /// If the linked list does not have space for another `amount` nodes, then allocate
     /// exactly enough memory for that many nodes.
+    ///
+    /// This is O(allocation_size).
     pub fn reserve_exact(&mut self, amount: usize) {
         let free_capacity = self.capacity() - self.len();
         if free_capacity >= amount { return; }
@@ -557,3 +687,4 @@ mod tests {
         assert_eq!(list2, vec);
     }
 }
+
