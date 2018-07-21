@@ -72,11 +72,12 @@ fn shortest_path() {
         visited[node] = true;
 
         for neighbour in graph.neighbours(node) {
-            if !visited[node] {
+            if !visited[neighbour] {
                 list_queue.push_back((neighbour, len + 1));
                 vec_queue.push_back((neighbour, len + 1));
             }
         }
     }
     assert!(vec_queue.is_empty());
+    println!("no path");
 }
