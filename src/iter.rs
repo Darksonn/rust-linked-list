@@ -1,6 +1,6 @@
 use super::*;
 
-#[cfg(nightly)]
+#[cfg(feature = "nightly")]
 use std::iter::TrustedLen;
 use std::iter::{DoubleEndedIterator, ExactSizeIterator, FusedIterator};
 use std::marker::PhantomData;
@@ -14,8 +14,10 @@ pub struct Iter<'a, T: 'a> {
     pub(crate) len: usize,
     pub(crate) marker: PhantomData<&'a T>,
 }
-#[cfg(nightly)]
-impl<'a, T> TrustedLen for Iter<'a, T> {}
+#[cfg(feature = "nightly")]
+unsafe impl<'a, T> TrustedLen for Iter<'a, T> {}
+unsafe impl<'a, T: Send> Send for Iter<'a, T> {}
+unsafe impl<'a, T: Sync> Sync for Iter<'a, T> {}
 impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
     fn next(&mut self) -> Option<&'a T> {
@@ -75,8 +77,10 @@ pub struct IterMut<'a, T: 'a> {
     pub(crate) len: usize,
     pub(crate) marker: PhantomData<&'a mut T>,
 }
-#[cfg(nightly)]
-impl<'a, T> TrustedLen for IterMut<'a, T> {}
+#[cfg(feature = "nightly")]
+unsafe impl<'a, T> TrustedLen for IterMut<'a, T> {}
+unsafe impl<'a, T: Send> Send for IterMut<'a, T> {}
+unsafe impl<'a, T: Sync> Sync for IterMut<'a, T> {}
 impl<'a, T> Iterator for IterMut<'a, T> {
     type Item = &'a mut T;
     fn next(&mut self) -> Option<&'a mut T> {
@@ -136,8 +140,10 @@ pub struct IntoIter<T> {
     pub(crate) len: usize,
     pub(crate) allocations: Vec<(*mut LinkedNode<T>, usize)>,
 }
-#[cfg(nightly)]
-impl<'a, T> TrustedLen for IntoIter<'a, T> {}
+#[cfg(feature = "nightly")]
+unsafe impl<T> TrustedLen for IntoIter<T> {}
+unsafe impl<T: Send> Send for IntoIter<T> {}
+unsafe impl<T: Sync> Sync for IntoIter<T> {}
 impl<T> Iterator for IntoIter<T> {
     type Item = T;
     fn next(&mut self) -> Option<T> {

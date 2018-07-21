@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "nightly", feature(trusted_len))]
+
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -725,7 +727,6 @@ impl<T> LinkedList<T> {
     /// assert_eq!(capacity_before_clear, list.capacity());
     /// ```
     pub fn clear(&mut self) {
-
         if self.tail.is_null() {
             return;
         }
@@ -752,7 +753,6 @@ impl<T> LinkedList<T> {
                 }
             }
         }
-
     }
 
     /// Returns the number of elements the list can hold without allocating.
