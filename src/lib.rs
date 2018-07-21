@@ -81,7 +81,8 @@ impl<T> LinkedList<T> {
         list
     }
 
-    /// Add the element to the back of the linked list in O(1).
+    /// Add the element to the back of the linked list in `O(1)`, unless it has to
+    /// allocate, which is `O(chunk_size)`.
     ///
     /// This will not make any allocation unless `len = capacity`, in which case it will
     /// allocate `chunk_size` nodes.
@@ -122,7 +123,8 @@ impl<T> LinkedList<T> {
         self.tail = node;
         self.len += 1;
     }
-    /// Add the element to the front of the linked list in O(1).
+    /// Add the element to the front of the linked list in `O(1)`, unless it has to
+    /// allocate, which is `O(chunk_size)`.
     ///
     /// This will not make any allocation unless `len = capacity`, in which case it will
     /// allocate `chunk_size` nodes.
@@ -289,7 +291,7 @@ impl<T> LinkedList<T> {
     }
     /// Removes the back element and returns it, or `None` if the list is empty.
     ///
-    /// This is an O(1) operation.
+    /// This is an `O(1)` operation.
     ///
     /// # Examples
     ///
@@ -342,7 +344,7 @@ impl<T> LinkedList<T> {
     }
     /// Removes the front element and returns it, or `None` if the list is empty.
     ///
-    /// This is an O(1) operation.
+    /// This is an `O(1)` operation.
     ///
     /// # Examples
     ///
@@ -553,7 +555,7 @@ impl<T> LinkedList<T> {
     /// `other.capacity()`, and that `other` will have a capacity of zero when this method
     /// returns.
     ///
-    /// Moving the nodes from `other` to `self` is O(1), but moving the excess capacity
+    /// Moving the nodes from `other` to `self` is `O(1)`, but moving the excess capacity
     /// and the ownership of allocations requires a full iteration through one of them,
     /// meaning it is linear time, although `append` will always iterate through the
     /// shorter one.
@@ -858,7 +860,7 @@ impl<T> LinkedList<T> {
     /// list. This method will not reserve less than [`chunk_size`] nodes to avoid
     /// frequent allocations.
     ///
-    /// This is O(allocation_size).
+    /// This is `O(allocation_size)`.
     ///
     /// # Examples
     ///
