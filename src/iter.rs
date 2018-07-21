@@ -4,6 +4,7 @@ use super::*;
 #[cfg(feature = "nightly")]
 use std::iter::TrustedLen;
 use std::iter::{DoubleEndedIterator, ExactSizeIterator, FusedIterator};
+use std::fmt;
 use std::marker::PhantomData;
 use std::ptr;
 
@@ -70,6 +71,20 @@ impl<'a, T> ExactSizeIterator for Iter<'a, T> {
         self.len
     }
 }
+impl<'a, T: fmt::Debug> fmt::Debug for Iter<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        f.write_str("LinkedList::Iter")?;
+        let mut out = f.debug_list();
+        let mut ptr = self.head;
+        for _ in 0..self.len {
+            unsafe {
+                out.entry(&(*ptr).value);
+                ptr = (*ptr).next;
+            }
+        }
+        out.finish()
+    }
+}
 
 /// An iterator over mutably borrowed values from a linked list.
 pub struct IterMut<'a, T: 'a> {
@@ -131,6 +146,23 @@ impl<'a, T> FusedIterator for IterMut<'a, T> {}
 impl<'a, T> ExactSizeIterator for IterMut<'a, T> {
     fn len(&self) -> usize {
         self.len
+    }
+}
+impl<'a, T: fmt::Debug> fmt::Debug for IterMut<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        f.write_str("LinkedList::IterMut")?;
+        let mut out = f.debug_list();
+        let mut ptr = self.head;
+        for _ in 0..self.len {
+            unsafe {
+                // creating this reference cannot alias with any mutable reference
+                // returned by the iterator, since it only prints the values not yet
+                // returned
+                out.entry(&(*ptr).value);
+                ptr = (*ptr).next;
+            }
+        }
+        out.finish()
     }
 }
 
@@ -208,5 +240,19 @@ impl<T> Drop for IntoIter<T> {
                 drop(vec);
             }
         }
+    }
+}
+impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        f.write_str("LinkedList::IntoIter")?;
+        let mut out = f.debug_list();
+        let mut ptr = self.head;
+        for _ in 0..self.len {
+            unsafe {
+                out.entry(&(*ptr).value);
+                ptr = (*ptr).next;
+            }
+        }
+        out.finish()
     }
 }

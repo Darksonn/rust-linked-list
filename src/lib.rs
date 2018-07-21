@@ -1184,52 +1184,11 @@ impl<T: Hash> Hash for LinkedList<T> {
 }
 impl<T: fmt::Debug> fmt::Debug for LinkedList<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let mut tuple = f.debug_list();
+        let mut out = f.debug_list();
         for item in self.iter() {
-            tuple.entry(item);
+            out.entry(item);
         }
-        tuple.finish()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rand::prelude::*;
-    #[test]
-    fn retain() {
-        let mut list: LinkedList<usize> = LinkedList::new();
-        for i in 0..16 {
-            list.push_back(i);
-        }
-
-        let mut rng = thread_rng();
-
-        let mut mask = [false; 16];
-        for val in mask.iter_mut() {
-            *val = rng.gen();
-        }
-
-        list.retain_map(|i| if mask[i] { Some(i + 1) } else { None });
-
-        let nums: Vec<usize> = (0..16).filter(|&i| mask[i]).map(|i| i + 1).collect();
-
-        println!("{:?}", mask);
-        for (a, b) in list.into_iter().zip(nums.into_iter()) {
-            assert_eq!(a, b);
-        }
-    }
-
-    #[test]
-    fn iter_collect_compare() {
-        let mut list = LinkedList::new();
-        for i in 0..64usize {
-            list.push_back(i);
-        }
-        let list2: LinkedList<u32> = list.iter().map(|&i| i as u32).collect();
-        let vec: Vec<u32> = list.into_iter().map(|i| i as u32).collect();
-
-        assert_eq!(list2, vec);
+        out.finish()
     }
 }
 
@@ -1299,5 +1258,143 @@ mod serde_test {
         let list2: LinkedList<u32> = serde_json::from_str(&json).unwrap();
 
         assert_eq!(list, list2);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::prelude::*;
+    use std::fmt::Write;
+    #[test]
+    fn retain() {
+        let mut list: LinkedList<usize> = LinkedList::new();
+        for i in 0..16 {
+            list.push_back(i);
+        }
+
+        let mut rng = thread_rng();
+
+        let mut mask = [false; 16];
+        for val in mask.iter_mut() {
+            *val = rng.gen();
+        }
+
+        list.retain_map(|i| if mask[i] { Some(i + 1) } else { None });
+
+        let nums: Vec<usize> = (0..16).filter(|&i| mask[i]).map(|i| i + 1).collect();
+
+        println!("{:?}", mask);
+        for (a, b) in list.into_iter().zip(nums.into_iter()) {
+            assert_eq!(a, b);
+        }
+    }
+
+    #[test]
+    fn iter_collect_compare() {
+        let mut list = LinkedList::new();
+        for i in 0..64usize {
+            list.push_back(i);
+        }
+        let list2: LinkedList<u32> = list.iter().map(|&i| i as u32).collect();
+        let vec: Vec<u32> = list.into_iter().map(|i| i as u32).collect();
+
+        assert_eq!(list2, vec);
+    }
+    #[test]
+    fn debug_print_list() {
+        let mut output = String::new();
+        let mut list = LinkedList::new();
+        list.push_back(1);
+        list.push_back(2);
+        list.push_back(3);
+        list.push_back(4);
+        write!(output, "{:?}", list).unwrap();
+        assert_eq!(output, "[1, 2, 3, 4]");
+    }
+    #[test]
+    fn debug_print_iter() {
+        let mut output = String::new();
+        let mut list = LinkedList::new();
+        list.push_back(1);
+        list.push_back(2);
+        list.push_back(3);
+        list.push_back(4);
+
+        let mut iter = list.iter();
+
+        write!(output, "{:?}", iter).unwrap();
+        assert_eq!(output, "LinkedList::Iter[1, 2, 3, 4]");
+        output.clear();
+
+        let _ = iter.next();
+        let _ = iter.next_back();
+
+        write!(output, "{:?}", iter).unwrap();
+        assert_eq!(output, "LinkedList::Iter[2, 3]");
+        output.clear();
+    }
+    #[test]
+    fn debug_print_iter_mut() {
+        let mut output = String::new();
+        let mut list = LinkedList::new();
+        list.push_back(1);
+        list.push_back(2);
+        list.push_back(3);
+        list.push_back(4);
+
+        let mut iter = list.iter_mut();
+
+        write!(output, "{:?}", iter).unwrap();
+        assert_eq!(output, "LinkedList::IterMut[1, 2, 3, 4]");
+        output.clear();
+
+        let _ = iter.next();
+        let _ = iter.next_back();
+
+        write!(output, "{:?}", iter).unwrap();
+        assert_eq!(output, "LinkedList::IterMut[2, 3]");
+        output.clear();
+    }
+    #[test]
+    fn debug_print_into_iter() {
+        let mut output = String::new();
+        let mut list = LinkedList::new();
+        list.push_back(1);
+        list.push_back(2);
+        list.push_back(3);
+        list.push_back(4);
+
+        let mut iter = list.into_iter();
+
+        write!(output, "{:?}", iter).unwrap();
+        assert_eq!(output, "LinkedList::IntoIter[1, 2, 3, 4]");
+        output.clear();
+
+        let _ = iter.next();
+        let _ = iter.next_back();
+
+        write!(output, "{:?}", iter).unwrap();
+        assert_eq!(output, "LinkedList::IntoIter[2, 3]");
+        output.clear();
+    }
+    #[test]
+    fn iter_mut_several_mut_ref() {
+        let mut list = LinkedList::new();
+        list.push_back(1);
+        list.push_back(2);
+        list.push_back(3);
+        list.push_back(4);
+
+        {
+            let mut iter_mut = list.iter_mut();
+            let ref1 = iter_mut.next().unwrap();
+            let ref2 = iter_mut.next().unwrap();
+            drop(iter_mut);
+            *ref1 = 6;
+            *ref2 = 7;
+        }
+
+        assert_eq!(list, vec![6,7,3,4]);
     }
 }
