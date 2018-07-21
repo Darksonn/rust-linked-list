@@ -33,7 +33,16 @@ struct LinkedNode<T> {
 }
 
 impl<T> LinkedList<T> {
-    /// Create a new LinkedList with a chunk size of 64.
+    /// Creates an empty `LinkedList` with a chunk size of 64.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let list: LinkedList<u32> = LinkedList::new();
+    /// assert_eq!(list.chunk_size(), 64);
+    /// ```
     pub fn new() -> LinkedList<T> {
         LinkedList {
             head: ptr::null_mut(),
@@ -45,7 +54,17 @@ impl<T> LinkedList<T> {
             unused_nodes: ptr::null_mut(),
         }
     }
-    /// Create a new LinkedList with a chunk size of 64 and the specified capacity.
+    /// Creates an empty `LinkedList` with a chunk size of 64 and makes a single
+    /// allocation with the specified amount of nodes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let list: LinkedList<u32> = LinkedList::with_capacity(293);
+    /// assert_eq!(list.capacity(), 293);
+    /// ```
     pub fn with_capacity(cap: usize) -> LinkedList<T> {
         let mut list = LinkedList {
             head: ptr::null_mut(),
@@ -60,9 +79,31 @@ impl<T> LinkedList<T> {
         list
     }
 
-    /// Add the element to the back of the linked list.
+    /// Add the element to the back of the linked list in O(1).
     ///
-    /// This method is O(1).
+    /// This will not make any allocation unless `len = capacity`, in which case it will
+    /// allocate `chunk_size` nodes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// assert_eq!(list.capacity(), 0);
+    /// // add an element, this will cause an allocation
+    /// list.push_back(35);
+    /// assert_eq!(list.capacity(), list.chunk_size());
+    /// assert_eq!(Some(&35), list.back());
+    ///
+    /// // if we add another, then since the allocation is large enough, this shouldn't
+    /// // change the capacity
+    /// list.push_back(29);
+    /// assert_eq!(list.capacity(), list.chunk_size());
+    /// assert_eq!(Some(&29), list.back());
+    /// // the first element should still be at the front of the list
+    /// assert_eq!(Some(&35), list.front());
+    /// ```
     pub fn push_back(&mut self, value: T) {
         let tail = self.tail;
         let node = self.new_node(ptr::null_mut(), tail, value);
@@ -79,9 +120,31 @@ impl<T> LinkedList<T> {
         self.tail = node;
         self.len += 1;
     }
-    /// Add the element to the front of the linked list.
+    /// Add the element to the front of the linked list in O(1).
     ///
-    /// This method is O(1).
+    /// This will not make any allocation unless `len = capacity`, in which case it will
+    /// allocate `chunk_size` nodes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// assert_eq!(list.capacity(), 0);
+    /// // add an element, this will cause an allocation
+    /// list.push_front(35);
+    /// assert_eq!(list.capacity(), list.chunk_size());
+    /// assert_eq!(Some(&35), list.front());
+    ///
+    /// // if we add another, then since the allocation is large enough, this shouldn't
+    /// // change the capacity
+    /// list.push_front(29);
+    /// assert_eq!(list.capacity(), list.chunk_size());
+    /// assert_eq!(Some(&29), list.front());
+    /// // the first element should still be at the back of the list
+    /// assert_eq!(Some(&35), list.back());
+    /// ```
     pub fn push_front(&mut self, value: T) {
         let head = self.head;
         let node = self.new_node(head, ptr::null_mut(), value);
@@ -98,9 +161,28 @@ impl<T> LinkedList<T> {
         self.head = node;
         self.len += 1;
     }
-    /// Returns the last element in the list, or none if it is empty.
+    /// Provides a reference to the back element, or `None` if the list is empty.
     ///
-    /// This method is O(1).
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// assert_eq!(list.back(), None);
+    ///
+    /// // add an element
+    /// list.push_back(32);
+    /// assert_eq!(list.back(), Some(&32));
+    ///
+    /// // add another
+    /// list.push_back(45);
+    /// assert_eq!(list.back(), Some(&45));
+    ///
+    /// // if we add an element in the other end, we still see 45
+    /// list.push_front(12);
+    /// assert_eq!(list.back(), Some(&45));
+    /// ```
     pub fn back(&self) -> Option<&T> {
         if self.tail.is_null() {
             None
@@ -108,9 +190,28 @@ impl<T> LinkedList<T> {
             unsafe { Some(&(*self.tail).value) }
         }
     }
-    /// Returns the first element in the list, or none if it is empty.
+    /// Provides a reference to the front element, or `None` if the list is empty.
     ///
-    /// This method is O(1).
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// assert_eq!(list.front(), None);
+    ///
+    /// // add an element
+    /// list.push_front(32);
+    /// assert_eq!(list.front(), Some(&32));
+    ///
+    /// // add another
+    /// list.push_front(45);
+    /// assert_eq!(list.front(), Some(&45));
+    ///
+    /// // if we add an element in the other end, we still see 45
+    /// list.push_back(12);
+    /// assert_eq!(list.front(), Some(&45));
+    /// ```
     pub fn front(&self) -> Option<&T> {
         if self.head.is_null() {
             None
@@ -118,9 +219,32 @@ impl<T> LinkedList<T> {
             unsafe { Some(&(*self.head).value) }
         }
     }
-    /// Returns the last element in the list, or none if it is empty.
+    /// Provides a mutable reference to the back element, or `None` if the list is empty.
     ///
-    /// This method is O(1).
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// assert_eq!(list.back_mut(), None);
+    ///
+    /// // add an element
+    /// list.push_back(32);
+    ///
+    /// // let's change the element we just added
+    /// match list.back_mut() {
+    ///     None => unreachable!("the list isn't empty, so this wont happen"),
+    ///     Some(back) => {
+    ///         assert_eq!(*back, 32);
+    ///         *back = 45;
+    ///         assert_eq!(*back, 45);
+    ///     }
+    /// }
+    ///
+    /// // This changed the element in the list.
+    /// assert_eq!(list.back(), Some(&45));
+    /// ```
     pub fn back_mut(&mut self) -> Option<&mut T> {
         if self.tail.is_null() {
             None
@@ -128,9 +252,32 @@ impl<T> LinkedList<T> {
             unsafe { Some(&mut (*self.tail).value) }
         }
     }
-    /// Returns the first element in the list, or none if it is empty.
+    /// Provides a mutable reference to the front element, or `None` if the list is empty.
     ///
-    /// This method is O(1).
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// assert_eq!(list.front_mut(), None);
+    ///
+    /// // add an element
+    /// list.push_front(32);
+    ///
+    /// // let's change the element we just added
+    /// match list.front_mut() {
+    ///     None => unreachable!("the list isn't empty, so this wont happen"),
+    ///     Some(front) => {
+    ///         assert_eq!(*front, 32);
+    ///         *front = 45;
+    ///         assert_eq!(*front, 45);
+    ///     }
+    /// }
+    ///
+    /// // This changed the element in the list.
+    /// assert_eq!(list.front(), Some(&45));
+    /// ```
     pub fn front_mut(&mut self) -> Option<&mut T> {
         if self.head.is_null() {
             None
@@ -138,9 +285,39 @@ impl<T> LinkedList<T> {
             unsafe { Some(&mut (*self.head).value) }
         }
     }
-    /// Remove the last element in the list and return it, or none if it's empty.
+    /// Removes the back element and returns it, or `None` if the list is empty.
     ///
-    /// This method is O(1).
+    /// This is an O(1) operation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    ///
+    /// // the list is empty
+    /// assert_eq!(list.pop_back(), None);
+    ///
+    /// // add some elements
+    /// list.push_back(3);
+    /// list.push_back(2);
+    /// list.push_back(1);
+    /// // other end too
+    /// list.push_front(4);
+    ///
+    /// assert_eq!(list.len(), 4);
+    ///
+    /// // let's pop them
+    /// assert_eq!(list.pop_back(), Some(1));
+    /// assert_eq!(list.pop_back(), Some(2));
+    /// assert_eq!(list.pop_back(), Some(3));
+    /// assert_eq!(list.pop_back(), Some(4));
+    /// // we removed all the items
+    /// assert_eq!(list.pop_back(), None);
+    ///
+    /// assert_eq!(list.len(), 0);
+    /// ```
     pub fn pop_back(&mut self) -> Option<T> {
         if self.tail.is_null() {
             None
@@ -153,26 +330,60 @@ impl<T> LinkedList<T> {
                     self.head = ptr::null_mut();
                 }
 
+                self.len -= 1;
+
                 let value = ptr::read(&(*tail).value);
                 self.discard_node(tail);
                 Some(value)
             }
         }
     }
-    /// Remove the first element in the list and return it, or none if it's empty.
+    /// Removes the front element and returns it, or `None` if the list is empty.
     ///
-    /// This method is O(1).
+    /// This is an O(1) operation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    ///
+    /// // the list is empty
+    /// assert_eq!(list.pop_front(), None);
+    ///
+    /// // add some elements
+    /// list.push_front(2);
+    /// list.push_front(1);
+    /// // other end too
+    /// list.push_back(3);
+    /// list.push_back(4);
+    ///
+    /// assert_eq!(list.len(), 4);
+    ///
+    /// // let's pop them
+    /// assert_eq!(list.pop_front(), Some(1));
+    /// assert_eq!(list.pop_front(), Some(2));
+    /// assert_eq!(list.pop_front(), Some(3));
+    /// assert_eq!(list.pop_front(), Some(4));
+    /// // we removed all the items
+    /// assert_eq!(list.pop_front(), None);
+    ///
+    /// assert_eq!(list.len(), 0);
+    /// ```
     pub fn pop_front(&mut self) -> Option<T> {
         if self.head.is_null() {
             None
         } else {
             unsafe {
                 let head = self.head;
-                self.head = (*head).prev;
+                self.head = (*head).next;
 
                 if self.tail == head {
                     self.tail = ptr::null_mut();
                 }
+
+                self.len -= 1;
 
                 let value = ptr::read(&(*head).value);
                 self.discard_node(head);
