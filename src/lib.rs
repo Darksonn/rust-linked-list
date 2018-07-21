@@ -361,32 +361,34 @@ impl<T> LinkedList<T> {
     ///
     /// This is `O(self.len)` unless `T` has no destructor, in which case it's `O(1)`.
     pub fn clear(&mut self) {
-        if mem::needs_drop::<T>() {
-            // we need to drop this type, so let's go through every element and drop it
-            let mut ptr = self.tail;
-            while !ptr.is_null() {
-                unsafe {
-                    // we go from the tail to the head, since then adding nodes with
-                    // push_back will use nodes in the same order as they were before
-                    // clear was called
-                    let prev = (*ptr).prev;
-                    // this call drops the node and adds it to unused_nodes
-                    self.drop_node(ptr);
-                    ptr = prev;
-                }
-            }
-        } else {
-            unsafe {
-                // just merge the linked list into the linked list in unused_nodes
-                (*self.tail).next = self.unused_nodes;
-                // unused_nodes is singly linked, so we don't need the other link
-                self.unused_nodes = self.head;
-            }
+
+        if self.tail.is_null() {
+            return;
         }
 
+        let tail = self.tail;
+
+        unsafe {
+            // just append unused_nodes to the linked list, and make the result into the
+            // new unused_nodes
+            (*self.tail).next = self.unused_nodes;
+            // unused_nodes is singly linked, so we don't need the other link
+            self.unused_nodes = self.head;
+        }
         self.head = ptr::null_mut();
         self.tail = ptr::null_mut();
         self.len = 0;
+
+        if mem::needs_drop::<T>() {
+            let mut ptr = tail;
+            while !ptr.is_null() {
+                unsafe {
+                    ptr::drop_in_place(&mut (*ptr).value);
+                    let prev = (*ptr).prev;
+                }
+            }
+        }
+
     }
 
     /// Returns the capacity of the linked list.
