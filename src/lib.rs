@@ -2,6 +2,33 @@
 
 //! This crate provides a linked list with a special allocation method, allowing
 //! allocations of several nodes in one allocation.
+//!
+//! # Features
+//!
+//! This crate provides a `serde` feature which implements [`Serialize`] and
+//! [`Deserialize`] on `LinkedList`.
+//!
+//! A `nightly` feature is provided, which currently just adds implementations of
+//! [`TrustedLen`] on iterators, but it may provide more nightly-only features in the
+//! future.
+//!
+//! # Examples
+//!
+//! ```
+//! use linked_list::LinkedList;
+//!
+//! let mut list: LinkedList<u32> = LinkedList::new();
+//! list.push_back(3);
+//! list.push_front(2);
+//! list.push_front(1);
+//!
+//! let items: Vec<u32> = list.iter().map(|&i| 10*i).collect();
+//! assert_eq!(items, [10, 20, 30]);
+//! ```
+//!
+//! [`TrustedLen`]: https://doc.rust-lang.org/std/iter/trait.TrustedLen.html
+//! [`Serialize`]: https://docs.serde.rs/serde/trait.Serialize.html
+//! [`Deserialize`]: https://docs.serde.rs/serde/trait.Deserialize.html
 
 use std::cmp::Ordering;
 use std::fmt;
