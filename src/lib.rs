@@ -384,7 +384,7 @@ impl<T> LinkedList<T> {
             while !ptr.is_null() {
                 unsafe {
                     ptr::drop_in_place(&mut (*ptr).value);
-                    let prev = (*ptr).prev;
+                    ptr = (*ptr).prev;
                 }
             }
         }
@@ -458,13 +458,6 @@ impl<T> LinkedList<T> {
 
     fn discard_node(&mut self, node: *mut LinkedNode<T>) {
         unsafe {
-            (*node).next = self.unused_nodes;
-        }
-        self.unused_nodes = node;
-    }
-    fn drop_node(&mut self, node: *mut LinkedNode<T>) {
-        unsafe {
-            ptr::drop_in_place(&mut (*node).value);
             (*node).next = self.unused_nodes;
         }
         self.unused_nodes = node;
