@@ -203,7 +203,7 @@ impl<T> LinkedList<T> {
         self.len = 0;
         // Since we are throwing away the used nodes, then the capacity is decreased by
         // the number of used nodes.
-        self.capacity = self.capacity - self.len;
+        self.capacity -= self.len;
         // This means that if f panics, then we won't call drop on the remaining values,
         // but that's safe so it's ok.
         // We still deallocate the memory the nodes are stored in when the list is
@@ -302,7 +302,7 @@ impl<T> LinkedList<T> {
         self.allocations.extend(other.allocations.drain(..));
 
         // move unused capacity to self, since self now owns the memory
-        self.capacity = self.capacity + other.capacity;
+        self.capacity += other.capacity;
         self.combine_unused_nodes(other);
 
         // other is now empty
@@ -339,7 +339,7 @@ impl<T> LinkedList<T> {
     }
 
     /// Borrows the list and returns an iterator through the elements in the list.
-    pub fn iter<'a>(&'a self) -> Iter<'a, T> {
+    pub fn iter(&self) -> Iter<T> {
         Iter {
             head: self.head,
             tail: self.tail,
@@ -348,7 +348,7 @@ impl<T> LinkedList<T> {
         }
     }
     /// Mutably borrows the list and returns an iterator through the elements in the list.
-    pub fn iter_mut<'a>(&'a mut self) -> IterMut<'a, T> {
+    pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut {
             head: self.head,
             tail: self.tail,
@@ -480,14 +480,7 @@ impl<T> LinkedList<T> {
             let node = self.unused_nodes;
             self.unused_nodes = (*node).next;
 
-            ptr::write(
-                node,
-                LinkedNode {
-                    next: next,
-                    prev: prev,
-                    value: value,
-                },
-            );
+            ptr::write(node, LinkedNode { next, prev, value });
             node
         }
     }
@@ -639,12 +632,12 @@ impl<'a, T: 'a + Copy> Extend<&'a T> for LinkedList<T> {
 impl<T> IntoIterator for LinkedList<T> {
     type Item = T;
     type IntoIter = IntoIter<T>;
-    fn into_iter(mut self) -> IntoIter<T> {
+    fn into_iter(self) -> IntoIter<T> {
         let iter = IntoIter {
             head: self.head,
             tail: self.tail,
             len: self.len,
-            allocations: unsafe { ptr::read(&mut self.allocations) },
+            allocations: unsafe { ptr::read(&self.allocations) },
         };
         mem::forget(self);
         iter

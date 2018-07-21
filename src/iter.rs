@@ -144,7 +144,7 @@ impl<T> Iterator for IntoIter<T> {
         if self.len > 0 {
             debug_assert!(!self.head.is_null());
             unsafe {
-                let value = ptr::read(&mut (*self.head).value);
+                let value = ptr::read(&(*self.head).value);
                 self.head = (*self.head).next;
                 self.len -= 1;
                 Some(value)
@@ -162,7 +162,7 @@ impl<T> Iterator for IntoIter<T> {
     fn last(self) -> Option<T> {
         if self.len > 0 {
             debug_assert!(!self.tail.is_null());
-            unsafe { Some(ptr::read(&mut (*self.tail).value)) }
+            unsafe { Some(ptr::read(&(*self.tail).value)) }
         } else {
             None
         }
@@ -173,7 +173,7 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
         if self.len > 0 {
             debug_assert!(!self.tail.is_null());
             unsafe {
-                let value = ptr::read(&mut (*self.tail).value);
+                let value = ptr::read(&(*self.tail).value);
                 self.tail = (*self.tail).prev;
                 self.len -= 1;
                 Some(value)
