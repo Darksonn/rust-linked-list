@@ -59,6 +59,7 @@ impl<T> LinkedList<T> {
     /// let list: LinkedList<u32> = LinkedList::new();
     /// assert_eq!(64, list.chunk_size());
     /// ```
+    #[inline]
     pub fn new() -> LinkedList<T> {
         LinkedList {
             head: ptr::null_mut(),
@@ -81,6 +82,7 @@ impl<T> LinkedList<T> {
     /// let list: LinkedList<u32> = LinkedList::with_capacity(293);
     /// assert_eq!(293, list.capacity());
     /// ```
+    #[inline]
     pub fn with_capacity(cap: usize) -> LinkedList<T> {
         let mut list = LinkedList {
             head: ptr::null_mut(),
@@ -201,6 +203,7 @@ impl<T> LinkedList<T> {
     /// list.push_front(12);
     /// assert_eq!(Some(&45), list.back());
     /// ```
+    #[inline]
     pub fn back(&self) -> Option<&T> {
         if self.tail.is_null() {
             None
@@ -230,6 +233,7 @@ impl<T> LinkedList<T> {
     /// list.push_back(12);
     /// assert_eq!(Some(&45), list.front());
     /// ```
+    #[inline]
     pub fn front(&self) -> Option<&T> {
         if self.head.is_null() {
             None
@@ -263,6 +267,7 @@ impl<T> LinkedList<T> {
     /// // This changed the element in the list.
     /// assert_eq!(Some(&45), list.back());
     /// ```
+    #[inline]
     pub fn back_mut(&mut self) -> Option<&mut T> {
         if self.tail.is_null() {
             None
@@ -296,6 +301,7 @@ impl<T> LinkedList<T> {
     /// // This changed the element in the list.
     /// assert_eq!(Some(&45), list.front());
     /// ```
+    #[inline]
     pub fn front_mut(&mut self) -> Option<&mut T> {
         if self.head.is_null() {
             None
@@ -682,6 +688,7 @@ impl<T> LinkedList<T> {
     /// assert_eq!(Some(&2), iter.next());
     /// assert_eq!(None, iter.next());
     /// ```
+    #[inline]
     pub fn iter(&self) -> Iter<T> {
         Iter {
             head: self.head,
@@ -713,6 +720,7 @@ impl<T> LinkedList<T> {
     /// assert_eq!(Some(&12), iter.next());
     /// assert_eq!(None, iter.next());
     /// ```
+    #[inline]
     pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut {
             head: self.head,
@@ -790,6 +798,7 @@ impl<T> LinkedList<T> {
     /// let mut list: LinkedList<u32> = LinkedList::with_capacity(48);
     /// assert_eq!(48, list.capacity());
     /// ```
+    #[inline]
     pub fn capacity(&self) -> usize {
         self.capacity
     }
@@ -811,6 +820,7 @@ impl<T> LinkedList<T> {
     /// list.pop_front();
     /// assert_eq!(1, list.len());
     /// ```
+    #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
@@ -830,6 +840,7 @@ impl<T> LinkedList<T> {
     /// list.pop_front();
     /// assert!(list.is_empty());
     /// ```
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -859,6 +870,7 @@ impl<T> LinkedList<T> {
     /// list.push_back(4);
     /// assert_eq!(3, list.capacity());
     /// ```
+    #[inline]
     pub fn set_chunk_size(&mut self, chunk_size: usize) {
         assert!(chunk_size > 0);
         self.chunk_size = chunk_size;
@@ -866,6 +878,7 @@ impl<T> LinkedList<T> {
     /// Returns the minimum size of future allocations.  See [`set_chunk_size`].
     ///
     /// [`set_chunk_size`]: #method.set_chunk_size
+    #[inline]
     pub fn chunk_size(&self) -> usize {
         self.chunk_size
     }
