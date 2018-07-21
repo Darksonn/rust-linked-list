@@ -30,8 +30,8 @@ fn random_graph() -> Graph {
     let mut rng = thread_rng();
     let mut graph = Graph { adj_list: vec![Vec::new(); 128] };
     for _ in 0..256 {
-        let a = rng.gen_range(0, 128);
-        let b = rng.gen_range(0, 128);
+        let a = rng.gen_range(0, graph.size());
+        let b = rng.gen_range(0, graph.size());
         graph.connect(a, b);
     }
     graph
@@ -55,12 +55,10 @@ fn shortest_path() {
     list_queue.push_back((start, 0));
     vec_queue.push_back((start, 0));
 
-    while !list_queue.is_empty() {
-        assert!(!vec_queue.is_empty());
-        assert_eq!(vec_queue.len(), list_queue.len());
+    while let Some((node, len)) = list_queue.pop_front() {
+        assert_eq!(Some((node, len)), vec_queue.pop_front());
 
-        let (node, len) = list_queue.pop_front().unwrap();
-        assert_eq!((node, len), vec_queue.pop_front().unwrap());
+        assert_eq!(vec_queue.len(), list_queue.len());
 
         if node == end {
             println!("shortest path has length {}", len);
