@@ -41,7 +41,7 @@ impl<T> LinkedList<T> {
     /// use linked_list::LinkedList;
     ///
     /// let list: LinkedList<u32> = LinkedList::new();
-    /// assert_eq!(list.chunk_size(), 64);
+    /// assert_eq!(64, list.chunk_size());
     /// ```
     pub fn new() -> LinkedList<T> {
         LinkedList {
@@ -63,7 +63,7 @@ impl<T> LinkedList<T> {
     /// use linked_list::LinkedList;
     ///
     /// let list: LinkedList<u32> = LinkedList::with_capacity(293);
-    /// assert_eq!(list.capacity(), 293);
+    /// assert_eq!(293, list.capacity());
     /// ```
     pub fn with_capacity(cap: usize) -> LinkedList<T> {
         let mut list = LinkedList {
@@ -90,7 +90,7 @@ impl<T> LinkedList<T> {
     /// use linked_list::LinkedList;
     ///
     /// let mut list: LinkedList<u32> = LinkedList::new();
-    /// assert_eq!(list.capacity(), 0);
+    /// assert_eq!(0, list.capacity());
     /// // add an element, this will cause an allocation
     /// list.push_back(35);
     /// assert_eq!(list.capacity(), list.chunk_size());
@@ -131,7 +131,7 @@ impl<T> LinkedList<T> {
     /// use linked_list::LinkedList;
     ///
     /// let mut list: LinkedList<u32> = LinkedList::new();
-    /// assert_eq!(list.capacity(), 0);
+    /// assert_eq!(0, list.capacity());
     /// // add an element, this will cause an allocation
     /// list.push_front(35);
     /// assert_eq!(list.capacity(), list.chunk_size());
@@ -169,19 +169,19 @@ impl<T> LinkedList<T> {
     /// use linked_list::LinkedList;
     ///
     /// let mut list: LinkedList<u32> = LinkedList::new();
-    /// assert_eq!(list.back(), None);
+    /// assert_eq!(None, list.back());
     ///
     /// // add an element
     /// list.push_back(32);
-    /// assert_eq!(list.back(), Some(&32));
+    /// assert_eq!(Some(&32), list.back());
     ///
     /// // add another
     /// list.push_back(45);
-    /// assert_eq!(list.back(), Some(&45));
+    /// assert_eq!(Some(&45), list.back());
     ///
     /// // if we add an element in the other end, we still see 45
     /// list.push_front(12);
-    /// assert_eq!(list.back(), Some(&45));
+    /// assert_eq!(Some(&45), list.back());
     /// ```
     pub fn back(&self) -> Option<&T> {
         if self.tail.is_null() {
@@ -198,19 +198,19 @@ impl<T> LinkedList<T> {
     /// use linked_list::LinkedList;
     ///
     /// let mut list: LinkedList<u32> = LinkedList::new();
-    /// assert_eq!(list.front(), None);
+    /// assert_eq!(None, list.front());
     ///
     /// // add an element
     /// list.push_front(32);
-    /// assert_eq!(list.front(), Some(&32));
+    /// assert_eq!(Some(&32), list.front());
     ///
     /// // add another
     /// list.push_front(45);
-    /// assert_eq!(list.front(), Some(&45));
+    /// assert_eq!(Some(&45), list.front());
     ///
     /// // if we add an element in the other end, we still see 45
     /// list.push_back(12);
-    /// assert_eq!(list.front(), Some(&45));
+    /// assert_eq!(Some(&45), list.front());
     /// ```
     pub fn front(&self) -> Option<&T> {
         if self.head.is_null() {
@@ -227,7 +227,7 @@ impl<T> LinkedList<T> {
     /// use linked_list::LinkedList;
     ///
     /// let mut list: LinkedList<u32> = LinkedList::new();
-    /// assert_eq!(list.back_mut(), None);
+    /// assert_eq!(None, list.back_mut());
     ///
     /// // add an element
     /// list.push_back(32);
@@ -236,14 +236,14 @@ impl<T> LinkedList<T> {
     /// match list.back_mut() {
     ///     None => unreachable!("the list isn't empty, so this wont happen"),
     ///     Some(back) => {
-    ///         assert_eq!(*back, 32);
+    ///         assert_eq!(32, *back);
     ///         *back = 45;
-    ///         assert_eq!(*back, 45);
+    ///         assert_eq!(45, *back);
     ///     }
     /// }
     ///
     /// // This changed the element in the list.
-    /// assert_eq!(list.back(), Some(&45));
+    /// assert_eq!(Some(&45), list.back());
     /// ```
     pub fn back_mut(&mut self) -> Option<&mut T> {
         if self.tail.is_null() {
@@ -260,7 +260,7 @@ impl<T> LinkedList<T> {
     /// use linked_list::LinkedList;
     ///
     /// let mut list: LinkedList<u32> = LinkedList::new();
-    /// assert_eq!(list.front_mut(), None);
+    /// assert_eq!(None, list.front_mut());
     ///
     /// // add an element
     /// list.push_front(32);
@@ -269,14 +269,14 @@ impl<T> LinkedList<T> {
     /// match list.front_mut() {
     ///     None => unreachable!("the list isn't empty, so this wont happen"),
     ///     Some(front) => {
-    ///         assert_eq!(*front, 32);
+    ///         assert_eq!(32, *front);
     ///         *front = 45;
-    ///         assert_eq!(*front, 45);
+    ///         assert_eq!(45, *front);
     ///     }
     /// }
     ///
     /// // This changed the element in the list.
-    /// assert_eq!(list.front(), Some(&45));
+    /// assert_eq!(Some(&45), list.front());
     /// ```
     pub fn front_mut(&mut self) -> Option<&mut T> {
         if self.head.is_null() {
@@ -297,7 +297,7 @@ impl<T> LinkedList<T> {
     /// let mut list: LinkedList<u32> = LinkedList::new();
     ///
     /// // the list is empty
-    /// assert_eq!(list.pop_back(), None);
+    /// assert_eq!(None, list.pop_back());
     ///
     /// // add some elements
     /// list.push_back(3);
@@ -306,17 +306,17 @@ impl<T> LinkedList<T> {
     /// // other end too
     /// list.push_front(4);
     ///
-    /// assert_eq!(list.len(), 4);
+    /// assert_eq!(4, list.len());
     ///
     /// // let's pop them
-    /// assert_eq!(list.pop_back(), Some(1));
-    /// assert_eq!(list.pop_back(), Some(2));
-    /// assert_eq!(list.pop_back(), Some(3));
-    /// assert_eq!(list.pop_back(), Some(4));
+    /// assert_eq!(Some(1), list.pop_back());
+    /// assert_eq!(Some(2), list.pop_back());
+    /// assert_eq!(Some(3), list.pop_back());
+    /// assert_eq!(Some(4), list.pop_back());
     /// // we removed all the items
-    /// assert_eq!(list.pop_back(), None);
+    /// assert_eq!(None, list.pop_back());
     ///
-    /// assert_eq!(list.len(), 0);
+    /// assert_eq!(0, list.len());
     /// ```
     pub fn pop_back(&mut self) -> Option<T> {
         if self.tail.is_null() {
@@ -350,7 +350,7 @@ impl<T> LinkedList<T> {
     /// let mut list: LinkedList<u32> = LinkedList::new();
     ///
     /// // the list is empty
-    /// assert_eq!(list.pop_front(), None);
+    /// assert_eq!(None, list.pop_front());
     ///
     /// // add some elements
     /// list.push_front(2);
@@ -359,17 +359,17 @@ impl<T> LinkedList<T> {
     /// list.push_back(3);
     /// list.push_back(4);
     ///
-    /// assert_eq!(list.len(), 4);
+    /// assert_eq!(4, list.len());
     ///
     /// // let's pop them
-    /// assert_eq!(list.pop_front(), Some(1));
-    /// assert_eq!(list.pop_front(), Some(2));
-    /// assert_eq!(list.pop_front(), Some(3));
-    /// assert_eq!(list.pop_front(), Some(4));
+    /// assert_eq!(Some(1), list.pop_front());
+    /// assert_eq!(Some(2), list.pop_front());
+    /// assert_eq!(Some(3), list.pop_front());
+    /// assert_eq!(Some(4), list.pop_front());
     /// // we removed all the items
-    /// assert_eq!(list.pop_front(), None);
+    /// assert_eq!(None, list.pop_front());
     ///
-    /// assert_eq!(list.len(), 0);
+    /// assert_eq!(0, list.len());
     /// ```
     pub fn pop_front(&mut self) -> Option<T> {
         if self.head.is_null() {
@@ -392,14 +392,90 @@ impl<T> LinkedList<T> {
         }
     }
 
-    /// Go through the list, calling `f` on each element, replacing the element with the
-    /// return value of `f`, or removing it if `f` returns `None`.
+    /// Retains only the elements specified by the predicate.
     ///
-    /// If `f` panics, the linked list will be left empty, and it may not call `drop` on
-    /// some elements, although memory will still be properly deallocated when the linked
-    /// list is dropped.
+    /// In other words, remove all elements `e` such that `f(&e)` returns `false`. This
+    /// method operates in place and preserves the order of the retained elements.
     ///
-    /// This method is O(n).
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// list.extend(&[0,1,2,3,4,5,6,7,8,9,10]);
+    ///
+    /// // remove all odd values
+    /// list.retain(|&val| val % 2 == 0);
+    ///
+    /// assert_eq!(list, vec![0,2,4,6,8,10]);
+    /// ```
+    pub fn retain(&mut self, mut f: impl FnMut(&T) -> bool) {
+        self.retain_map(|val| if f(&val) { Some(val) } else { None });
+    }
+    /// Retains only the elements specified by the predicate.
+    ///
+    /// In other words, remove all elements `e` such that `f(&e)` returns `false`. This
+    /// method operates in place and preserves the order of the retained elements.
+    ///
+    /// Note that `retain_mut` lets you mutate every element in the list, regardless of
+    /// whether you choose to keep or remove it.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// list.extend(&[0,1,2,3,4,5,6,7,8,9,10]);
+    ///
+    /// // add one to the value, then keep the odd values
+    /// list.retain_mut(|val| {
+    ///     *val += 1;
+    ///     *val % 2 == 1
+    /// });
+    ///
+    /// assert_eq!(list, vec![1,3,5,7,9,11]);
+    /// ```
+    pub fn retain_mut(&mut self, mut f: impl FnMut(&mut T) -> bool) {
+        self.retain_map(|mut val| if f(&mut val) { Some(val) } else { None });
+    }
+    /// Apply a mapping to the list in place, optionally removing elements.
+    ///
+    /// This method applies the closure to every element in the list, and replaces it with
+    /// the value returned by the closure, or removes it if the closure returned `None`.
+    /// This method preserves the order of the retained elements.
+    ///
+    /// Note that this method allows the closure to take ownership of removed elements.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// // Create a list of owned strings.
+    /// let mut list: LinkedList<String> = LinkedList::new();
+    /// list.extend(vec!["first".to_string(), "second".to_string(), "third".to_string()]);
+    ///
+    /// // this example removes the middle element and makes the two other uppercase
+    /// let mut variable_outside_list = "not second".to_string();
+    ///
+    /// list.retain_map(|string| {
+    ///     if string == "second" {
+    ///         // store the element outside the list and remove it
+    ///
+    ///         variable_outside_list = string;
+    ///         None
+    ///     } else {
+    ///         // replace the element with the uppercase version
+    ///
+    ///         Some(string.to_uppercase())
+    ///     }
+    /// });
+    ///
+    /// assert_eq!(list, vec!["FIRST", "THIRD"]);
+    /// assert_eq!(variable_outside_list, "second");
+    /// ```
     pub fn retain_map(&mut self, mut f: impl FnMut(T) -> Option<T>) {
         if self.is_empty() {
             return;
@@ -454,40 +530,51 @@ impl<T> LinkedList<T> {
         // we didn't allocate or deallocate in this method, so capacity is the same
         self.capacity = capacity;
     }
-    /// Go through the list, calling `f` on each element, which may mutate the element,
-    /// then removes it if `f` returns `false`.
-    ///
-    /// This method is O(n).
-    pub fn retain_mut(&mut self, mut f: impl FnMut(&mut T) -> bool) {
-        self.retain_map(|mut val| if f(&mut val) { Some(val) } else { None });
-    }
-    /// Go through the list, calling `f` on each element, and removes it if `f` returns
-    /// `false`.
-    ///
-    /// This method is O(n).
-    pub fn retain(&mut self, mut f: impl FnMut(&T) -> bool) {
-        self.retain_map(|val| if f(&val) { Some(val) } else { None });
-    }
 
-    /// Append all nodes from other to this list.
+    /// Moves all elements from `other` to the back of the list.
     ///
-    /// This method moves the nodes from the `other` linked list directly into this linked
-    /// list, meaning that the running time doesn't depend on the size of the lists.
-    ///
-    /// Note that this method also moves all excess capacity from one list to the other,
-    /// which is `O(min(self.len - self.capacity, other.len - other.capacity))`.
+    /// This reuses all the nodes from `other` and moves them into `self`. After this
+    /// operation, `other` becomes empty.
+    /// Excess capacity as well as ownership of allocations in `other` is also moved into
+    /// `self`.
     ///
     /// This method guarantees that the capacity in `self` is increased by
     /// `other.capacity()`, and that `other` will have a capacity of zero when this method
     /// returns.
     ///
-    /// Besides moving capacity, this method also moves the list of allocations, which
-    /// takes `O(min(self.allocations.len(), other.allocations.len()))` time. This has the
-    /// unfortunate effect that if the size of allocations isn't controlled with
-    /// `reserve`, `with_capacity`, etc., then this is `O(min(self.len, other.len))` as
-    /// every allocation will have a size of 64.
+    /// Moving the nodes from `other` to `self` is O(1), but moving the excess capacity
+    /// and the ownership of allocations requires a full iteration through one of them,
+    /// meaning it is linear time, although `append` will always iterate through the
+    /// shorter one.
     ///
     /// This method is `O(min(excess_capacity) + min(number_of_allocations))`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list_a: LinkedList<u32> = LinkedList::new();
+    /// let mut list_b: LinkedList<u32> = LinkedList::new();
+    ///
+    /// // add elements to both lists
+    /// list_a.extend(&[0,1,2,3,4]);
+    /// list_b.extend(&[5,6,7,8,9]);
+    ///
+    /// // remember their capacities before appending
+    /// let cap_a = list_a.capacity();
+    /// let cap_b = list_b.capacity();
+    ///
+    /// list_a.append(&mut list_b);
+    ///
+    /// // check that the elements were moved
+    /// assert_eq!(list_a, vec![0,1,2,3,4,5,6,7,8,9]);
+    /// assert_eq!(list_b, vec![]);
+    ///
+    /// // check that the capacity was moved
+    /// assert_eq!(cap_a + cap_b, list_a.capacity());
+    /// assert_eq!(0, list_b.capacity());
+    /// ```
     pub fn append(&mut self, other: &mut LinkedList<T>) {
         if self.is_empty() {
             // just directly move the chain to self
@@ -502,6 +589,7 @@ impl<T> LinkedList<T> {
                 (*self.tail).next = other.head;
                 (*other.head).prev = self.tail;
                 self.tail = other.tail;
+                self.len += other.len;
             }
         }
 
@@ -549,7 +637,24 @@ impl<T> LinkedList<T> {
         }
     }
 
-    /// Borrows the list and returns an iterator through the elements in the list.
+    /// Provides a forward iterator.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// list.push_back(0);
+    /// list.push_back(1);
+    /// list.push_back(2);
+    ///
+    /// let mut iter = list.iter();
+    /// assert_eq!(Some(&0), iter.next());
+    /// assert_eq!(Some(&1), iter.next());
+    /// assert_eq!(Some(&2), iter.next());
+    /// assert_eq!(None, iter.next());
+    /// ```
     pub fn iter(&self) -> Iter<T> {
         Iter {
             head: self.head,
@@ -558,7 +663,29 @@ impl<T> LinkedList<T> {
             marker: PhantomData,
         }
     }
-    /// Mutably borrows the list and returns an iterator through the elements in the list.
+    /// Provides a forward iterator with mutable references.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    ///
+    /// list.push_back(0);
+    /// list.push_back(1);
+    /// list.push_back(2);
+    ///
+    /// for element in list.iter_mut() {
+    ///     *element += 10;
+    /// }
+    ///
+    /// let mut iter = list.iter();
+    /// assert_eq!(Some(&10), iter.next());
+    /// assert_eq!(Some(&11), iter.next());
+    /// assert_eq!(Some(&12), iter.next());
+    /// assert_eq!(None, iter.next());
+    /// ```
     pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut {
             head: self.head,
@@ -568,9 +695,35 @@ impl<T> LinkedList<T> {
         }
     }
 
-    /// Clears the linked list, but does not deallocate any memory.
+    /// Removes all elements from the `LinkedList`. This method guarantees that capacity
+    /// is unchanged.
     ///
     /// This is `O(self.len)` unless `T` has no destructor, in which case it's `O(1)`.
+    ///
+    /// If drop on any element panics, this method won't drop the remaining nodes, but
+    /// the list will still be cleared and no capacity is lost.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    ///
+    /// list.push_front(2);
+    /// list.push_front(1);
+    /// assert_eq!(2, list.len());
+    /// assert_eq!(Some(&1), list.front());
+    ///
+    /// let capacity_before_clear = list.capacity();
+    ///
+    /// list.clear();
+    /// assert_eq!(0, list.len());
+    /// assert_eq!(None, list.front());
+    ///
+    /// // no allocation was lost
+    /// assert_eq!(capacity_before_clear, list.capacity());
+    /// ```
     pub fn clear(&mut self) {
 
         if self.tail.is_null() {
@@ -602,50 +755,125 @@ impl<T> LinkedList<T> {
 
     }
 
-    /// Returns the capacity of the linked list.
+    /// Returns the number of elements the list can hold without allocating.
     ///
-    /// This is O(1).
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::with_capacity(48);
+    /// assert_eq!(48, list.capacity());
+    /// ```
     pub fn capacity(&self) -> usize {
         self.capacity
     }
-    /// Returns the number of items in the linked list.
+    /// Returns the number of items in the list.
     ///
-    /// This is O(1).
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    ///
+    /// list.push_front(2);
+    /// assert_eq!(1, list.len());
+    ///
+    /// list.push_back(3);
+    /// assert_eq!(2, list.len());
+    ///
+    /// list.pop_front();
+    /// assert_eq!(1, list.len());
+    /// ```
     pub fn len(&self) -> usize {
         self.len
     }
-    /// Returns the number of items allocated when more memory is needed.
+    /// Returns `true` if the list is empty.
     ///
-    /// This is O(1).
-    pub fn chunk_size(&self) -> usize {
-        self.chunk_size
-    }
-    /// Returns true if the list is empty.
+    /// # Examples
     ///
-    /// This is O(1).
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// assert!(list.is_empty());
+    ///
+    /// list.push_back(3);
+    /// assert!(!list.is_empty());
+    ///
+    /// list.pop_front();
+    /// assert!(list.is_empty());
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    /// Set the number of items allocated when more memory is needed.
+    /// Change the size of future allocations. This has no effect on previous allocations.
     ///
-    /// This does not affect previous allocations.
+    /// When some operation increases the size of the linked list past the capacity, the
+    /// linked list will allocate at least `chunk_size` nodes in one allocation.
     ///
-    /// This is O(1).
-    pub fn set_chunk_size(&mut self, size: usize) {
-        assert!(size > 0);
-        self.chunk_size = size;
+    /// # Panics
+    ///
+    /// This method panics if `chunk_size` is zero.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// // default chunk size is 64
+    /// assert_eq!(64, list.chunk_size());
+    ///
+    /// list.set_chunk_size(3);
+    /// assert_eq!(3, list.chunk_size());
+    ///
+    /// // add an element, which allocates 3 nodes
+    /// list.push_back(4);
+    /// assert_eq!(3, list.capacity());
+    /// ```
+    pub fn set_chunk_size(&mut self, chunk_size: usize) {
+        assert!(chunk_size > 0);
+        self.chunk_size = chunk_size;
     }
-    /// Allocate enough memory for the linked list to contain at least `amount` memory, but
-    /// may allocate up to `chunk_size` if `amount` is less than `chunk_size`.
+    /// Returns the minimum size of future allocations.  See [`set_chunk_size`].
+    ///
+    /// [`set_chunk_size`]: #method.set_chunk_size
+    pub fn chunk_size(&self) -> usize {
+        self.chunk_size
+    }
+
+    /// Reserves capacity for at least `additional` more elements to be inserted in the
+    /// list. This method will not reserve less than [`chunk_size`] nodes to avoid
+    /// frequent allocations.
     ///
     /// This is O(allocation_size).
-    pub fn reserve(&mut self, amount: usize) {
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::with_capacity(5);
+    /// assert_eq!(5, list.capacity());
+    ///
+    /// list.push_back(3);
+    /// list.reserve(84); // 84 is larger than the default chunk size
+    ///
+    /// // there's already one element in the list, so it increases the capacity to 85
+    /// // the actual size of the allocation is 80, since the previous capacity was 5
+    /// assert_eq!(85, list.capacity());
+    /// ```
+    ///
+    /// [`chunk_size`]: #method.chunk_size
+    pub fn reserve(&mut self, additional: usize) {
         let free_capacity = self.capacity() - self.len();
-        if free_capacity >= amount {
+        if free_capacity >= additional {
             return;
         }
-        let to_allocate = amount - free_capacity;
+        let to_allocate = additional - free_capacity;
 
         let chunk_size = self.chunk_size;
         if to_allocate < chunk_size {
@@ -654,16 +882,34 @@ impl<T> LinkedList<T> {
             self.allocate(to_allocate);
         }
     }
-    /// If the linked list does not have space for another `amount` nodes, then allocate
-    /// exactly enough memory for that many nodes.
+    /// Reserves capacity for exactly `additional` more elements to be inserted in the
+    /// list.
     ///
-    /// This is O(allocation_size).
-    pub fn reserve_exact(&mut self, amount: usize) {
+    /// This is `O(additional)`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::with_capacity(5);
+    /// assert_eq!(5, list.capacity());
+    ///
+    /// list.push_back(3);
+    /// list.reserve_exact(5);
+    ///
+    /// // there's already one element in the list, so it increases the capacity to 6
+    /// // the actual size of the allocation is 1, since the previous capacity was 5
+    /// assert_eq!(6, list.capacity());
+    /// ```
+    ///
+    /// [`chunk_size`]: #method.chunk_size
+    pub fn reserve_exact(&mut self, additional: usize) {
         let free_capacity = self.capacity() - self.len();
-        if free_capacity >= amount {
+        if free_capacity >= additional {
             return;
         }
-        let to_allocate = amount - free_capacity;
+        let to_allocate = additional - free_capacity;
         self.allocate(to_allocate);
     }
 
