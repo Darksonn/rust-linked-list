@@ -1,14 +1,12 @@
-//! Uses the linked list as the queue used in the shortest path graph algorithm.
-
 extern crate linked_list;
 extern crate rand;
 
 use linked_list::LinkedList;
-use std::collections::VecDeque;
 use rand::prelude::*;
+use std::collections::VecDeque;
 
 struct Graph {
-    adj_list: Vec<Vec<usize>>
+    adj_list: Vec<Vec<usize>>,
 }
 
 impl Graph {
@@ -28,7 +26,9 @@ impl Graph {
 
 fn random_graph() -> Graph {
     let mut rng = thread_rng();
-    let mut graph = Graph { adj_list: vec![Vec::new(); 128] };
+    let mut graph = Graph {
+        adj_list: vec![Vec::new(); 128],
+    };
     for _ in 0..256 {
         let a = rng.gen_range(0, graph.size());
         let b = rng.gen_range(0, graph.size());
@@ -37,6 +37,7 @@ fn random_graph() -> Graph {
     graph
 }
 
+/// Uses the linked list as the queue used in the shortest path graph algorithm.
 #[test]
 fn shortest_path() {
     let graph = random_graph();
@@ -78,4 +79,47 @@ fn shortest_path() {
     }
     assert!(vec_queue.is_empty());
     println!("no path");
+}
+/// Performs a breadth first search to determine if there is a path.
+#[test]
+fn has_path() {
+    let graph = random_graph();
+
+    // check if there is a path from 0 to 1
+    let start = 0;
+    let end = 1;
+
+    // we perform the algorithm with two queues simultaneously, checking that they do the
+    // same thing
+    let mut list_queue = LinkedList::new();
+    let mut vec_queue = VecDeque::new();
+
+    let mut visited = vec![false; graph.size()];
+
+    list_queue.push_back(start);
+    vec_queue.push_back(start);
+
+    while let Some(node) = list_queue.pop_back() {
+        assert_eq!(Some(node), vec_queue.pop_back());
+
+        assert_eq!(vec_queue.len(), list_queue.len());
+
+        if node == end {
+            println!("there is a path");
+            return;
+        }
+        if visited[node] {
+            continue;
+        }
+        visited[node] = true;
+
+        for neighbour in graph.neighbours(node) {
+            if !visited[neighbour] {
+                list_queue.push_back(neighbour);
+                vec_queue.push_back(neighbour);
+            }
+        }
+    }
+    assert!(vec_queue.is_empty());
+    println!("there is no path");
 }
