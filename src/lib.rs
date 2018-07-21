@@ -399,6 +399,9 @@ impl<T> LinkedList<T> {
     /// In other words, remove all elements `e` such that `f(&e)` returns `false`. This
     /// method operates in place and preserves the order of the retained elements.
     ///
+    /// If the closure or drop panics then the list is cleared without calling drop and some
+    /// capacity may be lost.
+    ///
     /// # Examples
     ///
     /// ```
@@ -422,6 +425,9 @@ impl<T> LinkedList<T> {
     ///
     /// Note that `retain_mut` lets you mutate every element in the list, regardless of
     /// whether you choose to keep or remove it.
+    ///
+    /// If the closure or drop panics then the list is cleared without calling drop and some
+    /// capacity may be lost.
     ///
     /// # Examples
     ///
@@ -449,6 +455,9 @@ impl<T> LinkedList<T> {
     /// This method preserves the order of the retained elements.
     ///
     /// Note that this method allows the closure to take ownership of removed elements.
+    ///
+    /// If the closure panics then the list is cleared without calling drop and some capacity may
+    /// be lost.
     ///
     /// # Examples
     ///
