@@ -1,17 +1,13 @@
-use std::ptr;
-use std::mem;
-use std::fmt;
-use std::iter::{
-    FromIterator,
-    IntoIterator,
-    Extend
-};
-use std::hash::{Hash, Hasher};
-use std::marker::PhantomData;
 use std::cmp::Ordering;
+use std::fmt;
+use std::hash::{Hash, Hasher};
+use std::iter::{Extend, FromIterator, IntoIterator};
+use std::marker::PhantomData;
+use std::mem;
+use std::ptr;
 
 pub mod iter;
-use iter::{Iter, IterMut, IntoIter};
+use iter::{IntoIter, Iter, IterMut};
 
 #[cfg(test)]
 extern crate rand;
@@ -23,7 +19,7 @@ pub struct LinkedList<T> {
     capacity: usize,
     chunk_size: usize,
     allocations: Vec<(*mut LinkedNode<T>, usize)>,
-    unused_nodes: *mut LinkedNode<T>
+    unused_nodes: *mut LinkedNode<T>,
 }
 
 // LinkedLists own their data, so the borrow checker should prevent data races.
@@ -33,7 +29,7 @@ unsafe impl<T: Sync> Sync for LinkedList<T> {}
 struct LinkedNode<T> {
     next: *mut LinkedNode<T>,
     prev: *mut LinkedNode<T>,
-    value: T
+    value: T,
 }
 
 impl<T> LinkedList<T> {
@@ -46,7 +42,7 @@ impl<T> LinkedList<T> {
             capacity: 0,
             chunk_size: 64,
             allocations: Vec::new(),
-            unused_nodes: ptr::null_mut()
+            unused_nodes: ptr::null_mut(),
         }
     }
     /// Create a new LinkedList with a chunk size of 64 and the specified capacity.
@@ -58,7 +54,7 @@ impl<T> LinkedList<T> {
             capacity: 0,
             chunk_size: 64,
             allocations: Vec::with_capacity(1),
-            unused_nodes: ptr::null_mut()
+            unused_nodes: ptr::null_mut(),
         };
         list.allocate(cap);
         list
@@ -75,7 +71,9 @@ impl<T> LinkedList<T> {
             self.head = node;
         }
         if !self.tail.is_null() {
-            unsafe { (*self.tail).next = node; }
+            unsafe {
+                (*self.tail).next = node;
+            }
         }
 
         self.tail = node;
@@ -92,7 +90,9 @@ impl<T> LinkedList<T> {
             self.tail = node;
         }
         if !self.head.is_null() {
-            unsafe { (*self.head).prev = node; }
+            unsafe {
+                (*self.head).prev = node;
+            }
         }
 
         self.head = node;
@@ -105,9 +105,7 @@ impl<T> LinkedList<T> {
         if self.tail.is_null() {
             None
         } else {
-            unsafe {
-                Some(&(*self.tail).value)
-            }
+            unsafe { Some(&(*self.tail).value) }
         }
     }
     /// Returns the first element in the list, or none if it is empty.
@@ -117,9 +115,7 @@ impl<T> LinkedList<T> {
         if self.head.is_null() {
             None
         } else {
-            unsafe {
-                Some(&(*self.head).value)
-            }
+            unsafe { Some(&(*self.head).value) }
         }
     }
     /// Returns the last element in the list, or none if it is empty.
@@ -129,9 +125,7 @@ impl<T> LinkedList<T> {
         if self.tail.is_null() {
             None
         } else {
-            unsafe {
-                Some(&mut (*self.tail).value)
-            }
+            unsafe { Some(&mut (*self.tail).value) }
         }
     }
     /// Returns the first element in the list, or none if it is empty.
@@ -141,9 +135,7 @@ impl<T> LinkedList<T> {
         if self.head.is_null() {
             None
         } else {
-            unsafe {
-                Some(&mut (*self.head).value)
-            }
+            unsafe { Some(&mut (*self.head).value) }
         }
     }
     /// Remove the last element in the list and return it, or none if it's empty.
@@ -198,7 +190,9 @@ impl<T> LinkedList<T> {
     ///
     /// This method is O(n).
     pub fn retain_map(&mut self, mut f: impl FnMut(T) -> Option<T>) {
-        if self.is_empty() { return; }
+        if self.is_empty() {
+            return;
+        }
         let mut ptr = self.head;
         let mut last_retain: *mut LinkedNode<T> = ptr::null_mut();
         let capacity = self.capacity;
@@ -233,7 +227,7 @@ impl<T> LinkedList<T> {
                         (*ptr).prev = last_retain;
                         last_retain = ptr;
                         retained += 1;
-                    },
+                    }
                     None => {
                         self.discard_node(ptr);
                     }
@@ -248,33 +242,20 @@ impl<T> LinkedList<T> {
         // we didn't panic so put capacity back at the actual value
         // we didn't allocate or deallocate in this method, so capacity is the same
         self.capacity = capacity;
-
     }
     /// Go through the list, calling `f` on each element, which may mutate the element,
     /// then removes it if `f` returns `false`.
     ///
     /// This method is O(n).
     pub fn retain_mut(&mut self, mut f: impl FnMut(&mut T) -> bool) {
-        self.retain_map(|mut val| {
-            if f(&mut val) {
-                Some(val)
-            } else {
-                None
-            }
-        });
+        self.retain_map(|mut val| if f(&mut val) { Some(val) } else { None });
     }
     /// Go through the list, calling `f` on each element, and removes it if `f` returns
     /// `false`.
     ///
     /// This method is O(n).
     pub fn retain(&mut self, mut f: impl FnMut(&T) -> bool) {
-        self.retain_map(|val| {
-            if f(&val) {
-                Some(val)
-            } else {
-                None
-            }
-        });
+        self.retain_map(|val| if f(&val) { Some(val) } else { None });
     }
 
     /// Append all nodes from other to this list.
@@ -311,7 +292,6 @@ impl<T> LinkedList<T> {
                 (*other.head).prev = self.tail;
                 self.tail = other.tail;
             }
-
         }
 
         // move allocations
@@ -364,7 +344,7 @@ impl<T> LinkedList<T> {
             head: self.head,
             tail: self.tail,
             len: self.len,
-            marker: PhantomData
+            marker: PhantomData,
         }
     }
     /// Mutably borrows the list and returns an iterator through the elements in the list.
@@ -373,7 +353,7 @@ impl<T> LinkedList<T> {
             head: self.head,
             tail: self.tail,
             len: self.len,
-            marker: PhantomData
+            marker: PhantomData,
         }
     }
 
@@ -381,7 +361,6 @@ impl<T> LinkedList<T> {
     ///
     /// This is `O(self.len)` unless `T` has no destructor, in which case it's `O(1)`.
     pub fn clear(&mut self) {
-
         if mem::needs_drop::<T>() {
             // we need to drop this type, so let's go through every element and drop it
             let mut ptr = self.tail;
@@ -449,7 +428,9 @@ impl<T> LinkedList<T> {
     /// This is O(allocation_size).
     pub fn reserve(&mut self, amount: usize) {
         let free_capacity = self.capacity() - self.len();
-        if free_capacity >= amount { return; }
+        if free_capacity >= amount {
+            return;
+        }
         let to_allocate = amount - free_capacity;
 
         let chunk_size = self.chunk_size;
@@ -465,7 +446,9 @@ impl<T> LinkedList<T> {
     /// This is O(allocation_size).
     pub fn reserve_exact(&mut self, amount: usize) {
         let free_capacity = self.capacity() - self.len();
-        if free_capacity >= amount { return; }
+        if free_capacity >= amount {
+            return;
+        }
         let to_allocate = amount - free_capacity;
         self.allocate(to_allocate);
     }
@@ -487,7 +470,7 @@ impl<T> LinkedList<T> {
         &mut self,
         next: *mut LinkedNode<T>,
         prev: *mut LinkedNode<T>,
-        value: T
+        value: T,
     ) -> *mut LinkedNode<T> {
         unsafe {
             if self.unused_nodes.is_null() {
@@ -497,17 +480,22 @@ impl<T> LinkedList<T> {
             let node = self.unused_nodes;
             self.unused_nodes = (*node).next;
 
-            ptr::write(node, LinkedNode {
-                next: next,
-                prev: prev,
-                value: value
-            });
+            ptr::write(
+                node,
+                LinkedNode {
+                    next: next,
+                    prev: prev,
+                    value: value,
+                },
+            );
             node
         }
     }
 
     fn allocate(&mut self, amount: usize) {
-        if amount == 0 { return; }
+        if amount == 0 {
+            return;
+        }
         let mut vec = Vec::with_capacity(amount);
         let base = vec.as_mut_ptr();
         let capacity = vec.capacity();
@@ -580,7 +568,9 @@ impl<T> FromIterator<T> for LinkedList<T> {
 impl<T: Eq> Eq for LinkedList<T> {}
 impl<T: PartialEq<U>, U> PartialEq<LinkedList<U>> for LinkedList<T> {
     fn eq(&self, other: &LinkedList<U>) -> bool {
-        if self.len() != other.len() { return false; }
+        if self.len() != other.len() {
+            return false;
+        }
         for (a, b) in self.iter().zip(other.iter()) {
             if a != b {
                 return false;
@@ -591,7 +581,9 @@ impl<T: PartialEq<U>, U> PartialEq<LinkedList<U>> for LinkedList<T> {
 }
 impl<T: PartialEq<U>, U> PartialEq<Vec<U>> for LinkedList<T> {
     fn eq(&self, other: &Vec<U>) -> bool {
-        if self.len() != other.len() { return false; }
+        if self.len() != other.len() {
+            return false;
+        }
         for (a, b) in self.iter().zip(other.iter()) {
             if a != b {
                 return false;
@@ -604,8 +596,10 @@ impl<T: Ord> Ord for LinkedList<T> {
     fn cmp(&self, other: &LinkedList<T>) -> Ordering {
         for (a, b) in self.iter().zip(other.iter()) {
             match a.cmp(b) {
-                Ordering::Equal => { },
-                ordering => { return ordering; }
+                Ordering::Equal => {}
+                ordering => {
+                    return ordering;
+                }
             }
         }
         Ordering::Equal
@@ -615,8 +609,10 @@ impl<T: PartialOrd<U>, U> PartialOrd<LinkedList<U>> for LinkedList<T> {
     fn partial_cmp(&self, other: &LinkedList<U>) -> Option<Ordering> {
         for (a, b) in self.iter().zip(other.iter()) {
             match a.partial_cmp(b) {
-                Some(Ordering::Equal) => { },
-                ordering => { return ordering; }
+                Some(Ordering::Equal) => {}
+                ordering => {
+                    return ordering;
+                }
             }
         }
         Some(Ordering::Equal)
@@ -648,7 +644,7 @@ impl<T> IntoIterator for LinkedList<T> {
             head: self.head,
             tail: self.tail,
             len: self.len,
-            allocations: unsafe { ptr::read(&mut self.allocations) }
+            allocations: unsafe { ptr::read(&mut self.allocations) },
         };
         mem::forget(self);
         iter
@@ -685,8 +681,6 @@ impl<T: fmt::Debug> fmt::Debug for LinkedList<T> {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -705,15 +699,9 @@ mod tests {
             *val = rng.gen();
         }
 
-        list.retain_map(|i| {
-            if mask[i] {
-                Some(i + 1)
-            } else {
-                None
-            }
-        });
+        list.retain_map(|i| if mask[i] { Some(i + 1) } else { None });
 
-        let nums: Vec<usize> = (0..16).filter(|&i| mask[i]).map(|i| i+1).collect();
+        let nums: Vec<usize> = (0..16).filter(|&i| mask[i]).map(|i| i + 1).collect();
 
         println!("{:?}", mask);
         for (a, b) in list.into_iter().zip(nums.into_iter()) {
@@ -740,7 +728,7 @@ extern crate serde;
 #[cfg(all(feature = "serde", test))]
 extern crate serde_json;
 #[cfg(feature = "serde")]
-use serde::{Serialize, Serializer, Deserialize, Deserializer, de::Visitor, de::SeqAccess};
+use serde::{de::SeqAccess, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "serde")]
 impl<T: Serialize> Serialize for LinkedList<T> {
@@ -755,7 +743,7 @@ impl<T: Serialize> Serialize for LinkedList<T> {
 }
 #[cfg(feature = "serde")]
 struct LinkedListVisitor<T> {
-    marker: PhantomData<T>
+    marker: PhantomData<T>,
 }
 #[cfg(feature = "serde")]
 impl<'de, T: Deserialize<'de>> Visitor<'de> for LinkedListVisitor<T> {
@@ -766,7 +754,7 @@ impl<'de, T: Deserialize<'de>> Visitor<'de> for LinkedListVisitor<T> {
     fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
         let mut list = match seq.size_hint() {
             Some(hint) => LinkedList::with_capacity(hint),
-            None => LinkedList::new()
+            None => LinkedList::new(),
         };
         while let Some(next) = seq.next_element()? {
             list.push_back(next);
@@ -777,10 +765,11 @@ impl<'de, T: Deserialize<'de>> Visitor<'de> for LinkedListVisitor<T> {
 #[cfg(feature = "serde")]
 impl<'de, T: Deserialize<'de>> Deserialize<'de> for LinkedList<T> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        deserializer.deserialize_seq(LinkedListVisitor { marker: PhantomData })
+        deserializer.deserialize_seq(LinkedListVisitor {
+            marker: PhantomData,
+        })
     }
 }
-
 
 #[cfg(all(feature = "serde", test))]
 mod serde_test {
@@ -801,4 +790,3 @@ mod serde_test {
         assert_eq!(list, list2);
     }
 }
-

@@ -1,22 +1,18 @@
 use super::*;
 
-use std::ptr;
-use std::iter::{
-    FusedIterator,
-    ExactSizeIterator,
-    DoubleEndedIterator,
-};
-use std::marker::PhantomData;
 #[cfg(nightly)]
 use std::iter::TrustedLen;
+use std::iter::{DoubleEndedIterator, ExactSizeIterator, FusedIterator};
+use std::marker::PhantomData;
+use std::ptr;
 
 /// An iterator over borrowed values from a linked list.
-#[derive(Clone,Copy,Eq,PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Iter<'a, T: 'a> {
     pub(crate) head: *mut LinkedNode<T>,
     pub(crate) tail: *mut LinkedNode<T>,
     pub(crate) len: usize,
-    pub(crate) marker: PhantomData<&'a T>
+    pub(crate) marker: PhantomData<&'a T>,
 }
 #[cfg(nightly)]
 impl<'a, T> TrustedLen for Iter<'a, T> {}
@@ -72,13 +68,12 @@ impl<'a, T> ExactSizeIterator for Iter<'a, T> {
     }
 }
 
-
 /// An iterator over mutably borrowed values from a linked list.
 pub struct IterMut<'a, T: 'a> {
     pub(crate) head: *mut LinkedNode<T>,
     pub(crate) tail: *mut LinkedNode<T>,
     pub(crate) len: usize,
-    pub(crate) marker: PhantomData<&'a mut T>
+    pub(crate) marker: PhantomData<&'a mut T>,
 }
 #[cfg(nightly)]
 impl<'a, T> TrustedLen for IterMut<'a, T> {}
@@ -117,7 +112,7 @@ impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
         if self.len > 0 {
             debug_assert!(!self.tail.is_null());
             unsafe {
-                let value = Some(&mut(*self.tail).value);
+                let value = Some(&mut (*self.tail).value);
                 self.tail = (*self.tail).prev;
                 self.len -= 1;
                 value
@@ -139,7 +134,7 @@ pub struct IntoIter<T> {
     pub(crate) head: *mut LinkedNode<T>,
     pub(crate) tail: *mut LinkedNode<T>,
     pub(crate) len: usize,
-    pub(crate) allocations: Vec<(*mut LinkedNode<T>, usize)>
+    pub(crate) allocations: Vec<(*mut LinkedNode<T>, usize)>,
 }
 #[cfg(nightly)]
 impl<'a, T> TrustedLen for IntoIter<'a, T> {}
