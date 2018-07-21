@@ -14,6 +14,19 @@ use iter::{IntoIter, Iter, IterMut};
 #[cfg(test)]
 extern crate rand;
 
+/// A doubly-linked list with nodes allocated in large owned chunks.
+///
+/// The `LinkedList` allow pushing and popping elements at either end in constant time.
+///
+/// The difference between this linked list and the one in the standard library is the
+/// allocation method. The standard library linked list allocates each node in it's own
+/// `Box`, while this allocates a `Vec` with many nodes at a time, and keeps an internal
+/// list of unused nodes as well as a list of allocations.
+///
+/// This has the advantage that the nodes are more likely to be closer to each other on
+/// the heap, thus increasing CPU cache efficieny, as well as decreasing the number of
+/// allocations. It has the downside that you can't deallocate individual nodes, so the
+/// only way to deallocate memory owned by this list is to drop it.
 pub struct LinkedList<T> {
     head: *mut LinkedNode<T>,
     tail: *mut LinkedNode<T>,
