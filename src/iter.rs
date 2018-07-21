@@ -11,8 +11,8 @@ use std::ptr;
 /// An iterator over borrowed values from a linked list.
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Iter<'a, T: 'a> {
-    pub(crate) head: *mut LinkedNode<T>,
-    pub(crate) tail: *mut LinkedNode<T>,
+    pub(crate) head: *const LinkedNode<T>,
+    pub(crate) tail: *const LinkedNode<T>,
     pub(crate) len: usize,
     pub(crate) marker: PhantomData<&'a T>,
 }
