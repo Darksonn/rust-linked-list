@@ -1,3 +1,4 @@
+//! This module provides various iterators over the linked list.
 use super::*;
 
 #[cfg(feature = "nightly")]

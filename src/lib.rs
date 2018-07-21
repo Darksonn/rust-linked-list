@@ -1,5 +1,8 @@
 #![cfg_attr(feature = "nightly", feature(trusted_len))]
 
+//! This crate provides a linked list with a special allocation method, allowing
+//! allocations of several nodes in one allocation.
+
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
