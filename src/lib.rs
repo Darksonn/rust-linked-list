@@ -366,12 +366,13 @@ impl<T> LinkedList<T> {
             let mut ptr = self.tail;
             while !ptr.is_null() {
                 unsafe {
-                    // this call drops the node and adds it to unused_nodes
-                    self.drop_node(ptr);
                     // we go from the tail to the head, since then adding nodes with
                     // push_back will use nodes in the same order as they were before
                     // clear was called
-                    ptr = (*ptr).prev;
+                    let prev = (*ptr).prev;
+                    // this call drops the node and adds it to unused_nodes
+                    self.drop_node(ptr);
+                    ptr = prev;
                 }
             }
         } else {
