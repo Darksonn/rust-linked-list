@@ -18,7 +18,7 @@ pub struct Iter<'a, T: 'a> {
 }
 #[cfg(feature = "nightly")]
 unsafe impl<'a, T> TrustedLen for Iter<'a, T> {}
-unsafe impl<'a, T: Send> Send for Iter<'a, T> {}
+unsafe impl<'a, T: Sync> Send for Iter<'a, T> {}
 unsafe impl<'a, T: Sync> Sync for Iter<'a, T> {}
 impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
