@@ -5,6 +5,9 @@
 //!
 //! # Cursors and iterators
 //!
+//! Besides basic access to the list on the two ends, you're going to need either an
+//! iterator or a cursor to access the list.
+//!
 //! This crate supplies two cursor types, one for immutable access: [`CursorRef`], and one
 //! for mutable access: [`CursorMut`].
 //!
