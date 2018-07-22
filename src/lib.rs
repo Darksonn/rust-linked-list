@@ -40,7 +40,7 @@ use std::ptr;
 
 mod cursor;
 mod iter;
-pub use cursor::CursorRef;
+pub use cursor::{CursorMut, CursorRef};
 pub use iter::{IntoIter, Iter, IterMut};
 
 #[cfg(test)]
@@ -808,6 +808,24 @@ impl<T> LinkedList<T> {
             None
         } else {
             Some(CursorRef::create(self.head, 0))
+        }
+    }
+
+    pub fn cursor_mut_back(&mut self) -> Option<CursorMut<T>> {
+        if self.tail.is_null() {
+            None
+        } else {
+            let tail = self.tail;
+            let len = self.len;
+            Some(CursorMut::create(self, tail, len - 1))
+        }
+    }
+    pub fn cursor_mut_front(&mut self) -> Option<CursorMut<T>> {
+        if self.head.is_null() {
+            None
+        } else {
+            let head = self.head;
+            Some(CursorMut::create(self, head, 0))
         }
     }
 
