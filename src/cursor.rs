@@ -2,6 +2,7 @@
 //! operations.
 use super::*;
 
+use std::fmt;
 use std::marker::PhantomData;
 
 /// A cursor with immutable access to the `LinkedList`.
@@ -15,8 +16,8 @@ use std::marker::PhantomData;
 /// to some element.
 ///
 /// [`get`]: #method.get
-/// [`cursor_ref_front`]: ../struct.LinkedList.html#method.cursor_ref_front
-/// [`cursor_ref_back`]: ../struct.LinkedList.html#method.cursor_ref_back
+/// [`cursor_ref_front`]: struct.LinkedList.html#method.cursor_ref_front
+/// [`cursor_ref_back`]: struct.LinkedList.html#method.cursor_ref_back
 pub struct CursorRef<'a, T: 'a> {
     cursor: *const LinkedNode<T>,
     index: usize,
@@ -77,3 +78,10 @@ impl<'a, T: 'a> Clone for CursorRef<'a, T> {
 impl<'a, T: 'a> Copy for CursorRef<'a, T> {}
 unsafe impl<'a, T: Sync + 'a> Send for CursorRef<'a, T> {}
 unsafe impl<'a, T: Sync + 'a> Sync for CursorRef<'a, T> {}
+impl<'a, T: fmt::Debug> fmt::Debug for CursorRef<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        f.debug_tuple("CursorRef")
+            .field(self.get())
+            .finish()
+    }
+}

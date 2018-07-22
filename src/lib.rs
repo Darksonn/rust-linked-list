@@ -284,14 +284,12 @@ impl<T> LinkedList<T> {
     /// list.push_back(32);
     ///
     /// // let's change the element we just added
-    /// match list.back_mut() {
-    ///     None => unreachable!("the list isn't empty, so this wont happen"),
-    ///     Some(back) => {
-    ///         assert_eq!(32, *back);
-    ///         *back = 45;
-    ///         assert_eq!(45, *back);
-    ///     }
+    /// if let Some(back) = list.back_mut() {
+    ///     assert_eq!(32, *back);
+    ///     *back = 45;
+    ///     assert_eq!(45, *back);
     /// }
+    /// # else { unreachable!(); }
     ///
     /// // This changed the element in the list.
     /// assert_eq!(Some(&45), list.back());
@@ -318,14 +316,12 @@ impl<T> LinkedList<T> {
     /// list.push_front(32);
     ///
     /// // let's change the element we just added
-    /// match list.front_mut() {
-    ///     None => unreachable!("the list isn't empty, so this wont happen"),
-    ///     Some(front) => {
-    ///         assert_eq!(32, *front);
-    ///         *front = 45;
-    ///         assert_eq!(45, *front);
-    ///     }
+    /// if let Some(front) = list.front_mut() {
+    ///     assert_eq!(32, *front);
+    ///     *front = 45;
+    ///     assert_eq!(45, *front);
     /// }
+    /// # else { unreachable!(); }
     ///
     /// // This changed the element in the list.
     /// assert_eq!(Some(&45), list.front());
@@ -758,6 +754,26 @@ impl<T> LinkedList<T> {
             marker: PhantomData,
         }
     }
+    /// Provides a cursor to the contents of the linked list, positioned at the back
+    /// element, or `None` if the list is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// assert!(list.cursor_ref_back().is_none());
+    /// list.push_back(5);
+    /// list.push_back(6);
+    ///
+    /// if let Some(cursor) = list.cursor_ref_back() {
+    ///     assert_eq!(&6, cursor.get());
+    ///     assert_eq!(Some(&5), cursor.prev().map(|cursor| cursor.get()));
+    ///     assert!(cursor.next().is_none());
+    /// }
+    /// # else { unreachable!(); }
+    /// ```
     #[inline]
     pub fn cursor_ref_back(&self) -> Option<CursorRef<T>> {
         if self.tail.is_null() {
@@ -766,6 +782,26 @@ impl<T> LinkedList<T> {
             Some(CursorRef::create(self.tail, self.len - 1))
         }
     }
+    /// Provides a cursor to the contents of the linked list, positioned at the front
+    /// element, or `None` if the list is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// assert!(list.cursor_ref_front().is_none());
+    /// list.push_front(5);
+    /// list.push_front(6);
+    ///
+    /// if let Some(cursor) = list.cursor_ref_front() {
+    ///     assert_eq!(&6, cursor.get());
+    ///     assert_eq!(Some(&5), cursor.next().map(|cursor| cursor.get()));
+    ///     assert!(cursor.prev().is_none());
+    /// }
+    /// # else { unreachable!(); }
+    /// ```
     #[inline]
     pub fn cursor_ref_front(&self) -> Option<CursorRef<T>> {
         if self.head.is_null() {
