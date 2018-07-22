@@ -3,6 +3,7 @@
 use super::*;
 
 use std::fmt;
+use std::iter::Rev;
 use std::marker::PhantomData;
 
 /// A cursor with immutable access to the `LinkedList`.
@@ -771,6 +772,108 @@ impl<'a, T: 'a> CursorMut<'a, T> {
     /// ```
     pub fn is_back(&self) -> bool {
         unsafe { (*self.cursor).next.is_null() }
+    }
+
+    /// Return an iterator from this element to the tail of the list.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// list.push_back(1);
+    /// list.push_back(2);
+    /// list.push_back(3);
+    ///
+    /// if let Some(head) = list.cursor_mut_front() {
+    ///     let iter_from_2 = head.next().unwrap().iter_to_tail();
+    ///     let vec: Vec<u32> = iter_from_2.map(|&mut v| v).collect();
+    ///     assert_eq!(vec, [2, 3]);
+    /// }
+    ///# else { unreachable!(); }
+    /// ```
+    pub fn iter_to_tail(self) -> IterMut<'a, T> {
+        let len = self.list.len - self.index;
+        IterMut {
+            head: self.cursor,
+            tail: self.list.tail,
+            marker: PhantomData,
+            len,
+        }
+    }
+    /// Return an iterator from the tail of the list to this element (inclusive). This is
+    /// the same as calling `cursor.iter_to_tail().rev()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// list.push_back(1);
+    /// list.push_back(2);
+    /// list.push_back(3);
+    ///
+    /// if let Some(head) = list.cursor_mut_front() {
+    ///     let iter_to_2 = head.next().unwrap().iter_from_tail();
+    ///     let vec: Vec<u32> = iter_to_2.map(|&mut v| v).collect();
+    ///     assert_eq!(vec, [3, 2]);
+    /// }
+    ///# else { unreachable!(); }
+    /// ```
+    pub fn iter_from_tail(self) -> Rev<IterMut<'a, T>> {
+        self.iter_to_tail().rev()
+    }
+    /// Return an iterator from this element to the head of the list. This is the same as
+    /// calling `cursor.iter_from_head().rev()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// list.push_back(1);
+    /// list.push_back(2);
+    /// list.push_back(3);
+    ///
+    /// if let Some(head) = list.cursor_mut_front() {
+    ///     let iter_from_2 = head.next().unwrap().iter_to_head();
+    ///     let vec: Vec<u32> = iter_from_2.map(|&mut v| v).collect();
+    ///     assert_eq!(vec, [2, 1]);
+    /// }
+    ///# else { unreachable!(); }
+    /// ```
+    pub fn iter_to_head(self) -> Rev<IterMut<'a, T>> {
+        self.iter_from_head().rev()
+    }
+    /// Return an iterator from the head of the list to this element (inclusive).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linked_list::LinkedList;
+    ///
+    /// let mut list: LinkedList<u32> = LinkedList::new();
+    /// list.push_back(1);
+    /// list.push_back(2);
+    /// list.push_back(3);
+    ///
+    /// if let Some(head) = list.cursor_mut_front() {
+    ///     let iter_to_2 = head.next().unwrap().iter_from_head();
+    ///     let vec: Vec<u32> = iter_to_2.map(|&mut v| v).collect();
+    ///     assert_eq!(vec, [1, 2]);
+    /// }
+    ///# else { unreachable!(); }
+    /// ```
+    pub fn iter_from_head(self) -> IterMut<'a, T> {
+        IterMut {
+            head: self.list.head,
+            tail: self.cursor,
+            len: self.index + 1,
+            marker: PhantomData,
+        }
     }
 }
 unsafe impl<'a, T: Send + 'a> Send for CursorMut<'a, T> {}
