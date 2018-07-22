@@ -25,7 +25,7 @@ pub struct CursorRef<'a, T: 'a> {
     marker: PhantomData<&'a T>,
 }
 
-impl<'a, T: 'a> CursorRef<'a, T> {
+impl<'a, T> CursorRef<'a, T> {
     pub(crate) fn create(cursor: *const LinkedNode<T>, index: usize) -> Self {
         CursorRef {
             cursor,
@@ -199,7 +199,7 @@ impl<'a, T: 'a> CursorRef<'a, T> {
         self.cursor == other.cursor
     }
 }
-impl<'a, T: 'a> Clone for CursorRef<'a, T> {
+impl<'a, T> Clone for CursorRef<'a, T> {
     fn clone(&self) -> Self {
         CursorRef {
             cursor: self.cursor,
@@ -208,9 +208,9 @@ impl<'a, T: 'a> Clone for CursorRef<'a, T> {
         }
     }
 }
-impl<'a, T: 'a> Copy for CursorRef<'a, T> {}
-unsafe impl<'a, T: Sync + 'a> Send for CursorRef<'a, T> {}
-unsafe impl<'a, T: Sync + 'a> Sync for CursorRef<'a, T> {}
+impl<'a, T> Copy for CursorRef<'a, T> {}
+unsafe impl<'a, T: Sync> Send for CursorRef<'a, T> {}
+unsafe impl<'a, T: Sync> Sync for CursorRef<'a, T> {}
 impl<'a, T: fmt::Debug> fmt::Debug for CursorRef<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         f.debug_tuple("CursorRef").field(self.get()).finish()
@@ -233,7 +233,7 @@ pub struct CursorMut<'a, T: 'a> {
     index: usize,
 }
 
-impl<'a, T: 'a> CursorMut<'a, T> {
+impl<'a, T> CursorMut<'a, T> {
     pub(crate) fn create(
         list: &'a mut LinkedList<T>,
         cursor: *mut LinkedNode<T>,
@@ -888,8 +888,8 @@ impl<'a, T: 'a> CursorMut<'a, T> {
         }
     }
 }
-unsafe impl<'a, T: Send + 'a> Send for CursorMut<'a, T> {}
-unsafe impl<'a, T: Sync + 'a> Sync for CursorMut<'a, T> {}
+unsafe impl<'a, T: Send> Send for CursorMut<'a, T> {}
+unsafe impl<'a, T: Sync> Sync for CursorMut<'a, T> {}
 impl<'a, T: fmt::Debug> fmt::Debug for CursorMut<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         f.debug_tuple("CursorMut").field(self.get_ref()).finish()

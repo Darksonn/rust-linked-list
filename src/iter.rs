@@ -9,7 +9,6 @@ use std::marker::PhantomData;
 use std::ptr;
 
 /// An iterator over borrowed values from a linked list.
-#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Iter<'a, T: 'a> {
     pub(crate) head: *const LinkedNode<T>,
     pub(crate) tail: *const LinkedNode<T>,
@@ -71,6 +70,17 @@ impl<'a, T> ExactSizeIterator for Iter<'a, T> {
         self.len
     }
 }
+impl<'a, T> Clone for Iter<'a, T> {
+    fn clone(&self) -> Self {
+        Iter {
+            head: self.head,
+            tail: self.tail,
+            len: self.len,
+            marker: self.marker
+        }
+    }
+}
+impl<'a, T> Copy for Iter<'a, T> {}
 impl<'a, T: fmt::Debug> fmt::Debug for Iter<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         f.write_str("LinkedList::Iter")?;
