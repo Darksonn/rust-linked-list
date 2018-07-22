@@ -499,8 +499,8 @@ impl<T> LinkedList<T> {
     /// Note that `retain_mut` lets you mutate every element in the list, regardless of
     /// whether you choose to keep or remove it.
     ///
-    /// If the closure or drop panics then the list is cleared without calling drop and some
-    /// capacity may be lost.
+    /// If the closure or drop panics then the list is cleared without calling drop and
+    /// some capacity may be lost.
     ///
     /// # Examples
     ///

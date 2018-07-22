@@ -646,6 +646,16 @@ impl<'a, T: 'a> CursorMut<'a, T> {
 
     /// Provides a mutable reference to the element this cursor currently points at.
     ///
+    /// # Safety
+    ///
+    /// While this method only allows one mutable reference to exist at a time, you can
+    /// cast it to a mutable raw pointer, which will allow you to create several mutable
+    /// pointers into the list.
+    ///
+    /// The pointer is valid until the node is removed from the list or the list is
+    /// dropped. The pointer will remain valid if the node is moved to a different linked
+    /// list using [`append`].
+    ///
     /// # Examples
     ///
     /// ```
@@ -662,6 +672,8 @@ impl<'a, T: 'a> CursorMut<'a, T> {
     ///
     /// assert_eq!(list, vec![3, 2]);
     /// ```
+    ///
+    /// [`append`]: struct.LinkedList.html#method.append
     #[allow(unknown_lints)]
     #[allow(needless_lifetimes)]
     pub fn get<'cursor>(&'cursor mut self) -> &'cursor mut T {
