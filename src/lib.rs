@@ -38,8 +38,10 @@ use std::marker::PhantomData;
 use std::mem;
 use std::ptr;
 
-pub mod iter;
-use iter::{IntoIter, Iter, IterMut};
+mod cursor;
+mod iter;
+pub use cursor::CursorRef;
+pub use iter::{IntoIter, Iter, IterMut};
 
 #[cfg(test)]
 extern crate rand;
@@ -756,6 +758,22 @@ impl<T> LinkedList<T> {
             marker: PhantomData,
         }
     }
+    #[inline]
+    pub fn cursor_ref_back(&self) -> Option<CursorRef<T>> {
+        if self.tail.is_null() {
+            None
+        } else {
+            Some(CursorRef::create(self.tail, self.len - 1))
+        }
+    }
+    #[inline]
+    pub fn cursor_ref_front(&self) -> Option<CursorRef<T>> {
+        if self.head.is_null() {
+            None
+        } else {
+            Some(CursorRef::create(self.head, 0))
+        }
+    }
 
     /// Removes all elements from the `LinkedList`. This method guarantees that capacity
     /// is unchanged.
@@ -1103,6 +1121,45 @@ impl<T: PartialEq<U>, U> PartialEq<Vec<U>> for LinkedList<T> {
         true
     }
 }
+impl<T: PartialEq<U>, U> PartialEq<[U]> for LinkedList<T> {
+    fn eq(&self, other: &[U]) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+        for (a, b) in self.iter().zip(other.iter()) {
+            if a != b {
+                return false;
+            }
+        }
+        true
+    }
+}
+impl<'a, T: PartialEq<U>, U> PartialEq<&'a [U]> for LinkedList<T> {
+    fn eq(&self, other: &&'a [U]) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+        for (a, b) in self.iter().zip(other.iter()) {
+            if a != b {
+                return false;
+            }
+        }
+        true
+    }
+}
+impl<'a, T: PartialEq<U>, U> PartialEq<&'a mut [U]> for LinkedList<T> {
+    fn eq(&self, other: &&'a mut [U]) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+        for (a, b) in self.iter().zip(other.iter()) {
+            if a != b {
+                return false;
+            }
+        }
+        true
+    }
+}
 impl<T: Ord> Ord for LinkedList<T> {
     fn cmp(&self, other: &LinkedList<T>) -> Ordering {
         for (a, b) in self.iter().zip(other.iter()) {
@@ -1395,6 +1452,6 @@ mod tests {
             *ref2 = 7;
         }
 
-        assert_eq!(list, vec![6,7,3,4]);
+        assert_eq!(list, vec![6, 7, 3, 4]);
     }
 }

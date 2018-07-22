@@ -1,10 +1,10 @@
 //! This module provides various iterators over the linked list.
 use super::*;
 
+use std::fmt;
 #[cfg(feature = "nightly")]
 use std::iter::TrustedLen;
 use std::iter::{DoubleEndedIterator, ExactSizeIterator, FusedIterator};
-use std::fmt;
 use std::marker::PhantomData;
 use std::ptr;
 
