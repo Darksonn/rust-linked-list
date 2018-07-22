@@ -3,6 +3,24 @@
 //! This crate provides a linked list with a special allocation method, allowing
 //! allocations of several nodes in one allocation.
 //!
+//! # Cursors and iterators
+//!
+//! This crate supplies two cursor types, one for immutable access: [`CursorRef`], and one
+//! for mutable access: [`CursorMut`].
+//!
+//! When accessing the interior of the linked list you can either do so with an iterator
+//! or a [`CursorRef`].  You should use an iterator if you simply need to see every
+//! element once, and if you want to move back and forth you should use a [`CursorRef`].
+//!
+//! As for mutating the linked list, a mutable iterator only allows modifying the values
+//! of the list, and adding or removing values is not possible.  A [`CursorMut`] on the
+//! other hand allows moving around arbitrarily, and allows insertion and removal of
+//! items.  Note that a [`CursorMut`] doesn't allow obtaining simultaneous mutable
+//! references to different elements like a mutable iterator does.
+//!
+//! Note that the list can also be modified using the [`retain_map`], [`retain_mut`] and
+//! [`retain`] methods.
+//!
 //! # Features
 //!
 //! This crate provides a `serde` feature which implements [`Serialize`] and
@@ -29,6 +47,11 @@
 //! [`TrustedLen`]: https://doc.rust-lang.org/std/iter/trait.TrustedLen.html
 //! [`Serialize`]: https://docs.serde.rs/serde/trait.Serialize.html
 //! [`Deserialize`]: https://docs.serde.rs/serde/trait.Deserialize.html
+//! [`CursorRef`]: struct.CursorRef.html
+//! [`CursorMut`]: struct.CursorMut.html
+//! [`retain_map`]: struct.LinkedList.html#method.retain_map
+//! [`retain_mut`]: struct.LinkedList.html#method.retain_mut
+//! [`retain`]: struct.LinkedList.html#method.retain
 
 use std::cmp::Ordering;
 use std::fmt;
